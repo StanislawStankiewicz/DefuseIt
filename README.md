@@ -26,3 +26,8 @@ Each module needs 4/5 connections on each side:
 - SDA
 - SCL
 - INT (optional)
+
+## Setup
+
+### ATTiny85U
+`avrdude -c usbasp -p t85 -B 10 -U lfuse:w:0xE2:m` - use to enable full 8MHz clock for USBasp
