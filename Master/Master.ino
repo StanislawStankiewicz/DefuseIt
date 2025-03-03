@@ -3,15 +3,15 @@
 #include <TM1637Display.h>
 #include <math.h>
 
-#define BUTTON_PIN 2
-#define LED_PIN 3
-#define BUZZER_PIN 9
+#define BUTTON_PIN     2  // pin 4
+#define GREEN_LED_PIN  3  // pin 5
+#define RED_LED_PIN    4  // pin 6
+#define BUZZER_PIN     9  // pin 15
 
-#define DISPLAY1_CLK 4
-#define DISPLAY1_DIO 5
-#define DISPLAY2_CLK 6
-#define DISPLAY2_DIO 7
-
+#define DISPLAY1_CLK   5  // pin 11
+#define DISPLAY1_DIO   6  // pin 12
+#define DISPLAY2_CLK   7  // pin 13
+#define DISPLAY2_DIO   8  // pin 14
 
 const int gameDurationSeconds = 300;
 const int initialInterval = 10000;
@@ -34,7 +34,8 @@ void setup() {
     Serial.begin(9600);
     Wire.begin();
     pinMode(BUTTON_PIN, INPUT_PULLUP);
-    pinMode(LED_PIN, OUTPUT);
+    pinMode(GREEN_LED_PIN, OUTPUT);
+    pinMode(RED_LED_PIN, OUTPUT);
     pinMode(BUZZER_PIN, OUTPUT);
     versionDisplay.clear();
 
@@ -93,28 +94,40 @@ void loop() {
             Serial.print("Beep interval set to: ");
             Serial.println(beepInterval);
         }
-        
+
         allSolved = true;
+        bool failedModule = false;
         for (uint8_t i = 0; i < master.getModuleCount(); i++) {
             uint8_t status = master.getModuleStatus(i);
-            if (status == STATUS_UNSOLVED || status == STATUS_FAILED) {
+            if (status == STATUS_UNSOLVED) {
                 allSolved = false;
+            }
+            if (status == STATUS_FAILED) {
+                failedModule = true;
             }
         }
 
         if (allSolved) {
-            Serial.println("Master: All modules solved! Sending END_GAME signal.");
-            master.endGame();
-            digitalWrite(LED_PIN, HIGH);
-            while (1);
-        }
+          Serial.println("Master: All modules solved! Sending END_GAME signal.");
+          master.endGame();
+          digitalWrite(GREEN_LED_PIN, HIGH);
+          digitalWrite(RED_LED_PIN, LOW);
+          while (1);
+        } 
 
-        if (remainingTime == 0) {
-            Serial.println("Master: Time ran out! Sending END_GAME signal.");
-            master.endGame();
-            Serial.println("Master: Playing long failure beep.");
-            tone(BUZZER_PIN, 1000, 2000);
-            while (1);
+        if (failedModule || remainingTime == 0) {
+          Serial.println("Master: Game lost!");
+          master.endGame();
+          
+          if (failedModule) {
+              Serial.println("Master: A module has failed!");
+          } else {
+              Serial.println("Master: Time ran out!");
+          }
+          
+          digitalWrite(RED_LED_PIN, HIGH);  // Red LED ON for failure
+          tone(BUZZER_PIN, 1000, 2000);
+          while (1);
         }
 
         delay(50);

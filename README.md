@@ -5,7 +5,7 @@
 - repeat pattern
 - defuse wires
 - flip switches
-- binary
+- binary/math
 - enter valid regex
 - wordle
 
