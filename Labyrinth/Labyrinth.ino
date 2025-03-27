@@ -1,9 +1,13 @@
 #include <SPI.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
-#include "bitmaps.h"  // Your external file containing all bitmaps
+#include "bitmaps.h"          // Your external file containing all bitmaps
+#include "ModuleComms.h"     // Module communications header
 
-// Define color constants if desired:
+// New command definition for reset
+#define CMD_RESET 0x07
+
+// Define color constants
 #define WHITE 1
 #define BLACK 0
 
@@ -12,112 +16,124 @@
 #define SCREEN_HEIGHT 64
 
 // SPI Pin definitions for the SH1106G
-#define OLED_CS    10  // Chip Select
-#define OLED_DC     9  // Data/Command
-#define OLED_RST    8  // Reset
-#define OLED_CLK   13  // Clock
-#define OLED_MOSI  11  // MOSI (Data In)
+#define OLED_CS    12  // Chip Select
+#define OLED_DC    11  // Data/Command
+#define OLED_RST   10  // Reset
+#define OLED_CLK    9  // Clock
+#define OLED_MOSI   8  // MOSI (Data In)
 
-// Create an instance of the display with pin-based SPI
+// Create an instance of the display (using bit-banged SPI)
 Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT,
-                         OLED_MOSI, OLED_CLK, 
+                         OLED_MOSI, OLED_CLK,
                          OLED_DC, OLED_RST, OLED_CS);
 
-// Button and victory pins
+// Button and victory pin definitions
 #define BTN_LEFT      2
 #define BTN_FORWARD   3
 #define BTN_RIGHT     4
 #define VICTORY_PIN   5
 
-// Labyrinth map: 1 = wall, 0 = free space
-uint8_t labyrinth[16][16] = {
-  {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-  {1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1},
-  {1,1,1,0,1,1,1,1,0,1,1,1,0,1,1,1},
-  {1,0,0,0,0,0,0,1,0,0,0,1,0,0,0,1},
-  {1,0,1,1,1,1,0,1,1,1,0,1,1,1,0,1},
-  {1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1},
-  {1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1},
-  {1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1},
-  {1,0,1,1,1,0,1,1,1,1,0,1,1,1,0,1},
-  {1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1},
-  {1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1},
-  {1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1},
-  {1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1},
-  {1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1},
-  {1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1},
-  {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+// Labyrinth dimensions (change these to set any size, not just square)
+#define LABYRINTH_WIDTH  8
+#define LABYRINTH_HEIGHT 8
+
+// Example 8x8 labyrinth map: 1 = wall, 0 = free space
+uint8_t labyrinth[LABYRINTH_HEIGHT][LABYRINTH_WIDTH] = {
+  {1,1,1,1,1,1,1,1},
+  {1,0,0,0,1,0,0,1},
+  {1,0,1,0,1,0,1,1},
+  {1,0,1,0,0,0,0,1},
+  {1,0,1,1,1,1,0,1},
+  {1,0,0,0,0,1,0,1},
+  {1,1,0,1,0,1,0,1},
+  {1,1,1,1,1,1,1,1}
 };
 
-int playerX, playerY;
-int playerDir; 
-int goalX, goalY;
+int playerX, playerY;   // Current cell of the player
+int playerDir;          // 0: up, 1: right, 2: down, 3: left
+int goalX, goalY;       // Goal cell coordinates
 
+// For button debouncing
 bool lastBtnLeft    = HIGH;
 bool lastBtnForward = HIGH;
 bool lastBtnRight   = HIGH;
 
-void setup() {
-  Serial.begin(115200);
+// Game state flags
+volatile bool gameRunning   = false; // Set to true when CMD_START_GAME is received
+volatile bool gameCompleted = false; // Set to true when the player reaches the goal
+volatile bool resetRequested  = false; // Set to true when CMD_RESET is received
 
-  pinMode(BTN_LEFT,    INPUT_PULLUP);
-  pinMode(BTN_FORWARD, INPUT_PULLUP);
-  pinMode(BTN_RIGHT,   INPUT_PULLUP);
-  pinMode(VICTORY_PIN, OUTPUT);
+// Create an instance of the Slave communications object
+#define SLAVE_ADDRESS 0x11
+Slave gameSlave(SLAVE_ADDRESS);
+
+//--------------------------------------------------
+// Game State Functions
+//--------------------------------------------------
+void resetGameState() {
+  gameRunning = false;
+  gameCompleted = false;
   digitalWrite(VICTORY_PIN, LOW);
-
-  // Initialize the SH1106G display using SPI
-  if (!display.begin(SPI_MODE0, 0x3C)) {
-    Serial.println(F("Failed to initialize SH1106G display!"));
-    while (true) {}
-  }
-
   display.clearDisplay();
   display.display();
-  // Use text color = 1 (WHITE)
-  display.setTextColor(1);
-
-  // Seed random from an analog pin
-  randomSeed(analogRead(0));
-
   placeGoal();
   placePlayer();
+}
 
-  Serial.print("Player start: ");
-  Serial.print(playerX);
-  Serial.print(", ");
-  Serial.println(playerY);
-
+void startGameCallback() {
+  randomSeed(gameSlave.getMasterVersion());
+  resetGameState();
+  gameRunning = true;
   renderView();
 }
 
-// Choose a random free cell for the goal
+void endGameCallback() {
+  digitalWrite(VICTORY_PIN, LOW);
+}
+
+void processResetCommand() {
+  Serial.println("Reset command received.");
+  resetRequested = false;
+  resetGameState();
+}
+
+void completeGame() {
+  Serial.println("Game completed!");
+  gameCompleted = true;
+  display.clearDisplay();
+  display.display();
+  digitalWrite(VICTORY_PIN, HIGH);
+  gameSlave.setStatus(STATUS_PASSED);
+}
+
+//--------------------------------------------------
+// Labyrinth Functions
+//--------------------------------------------------
 void placeGoal() {
   do {
-    goalX = random(1, 15);
-    goalY = random(1, 15);
+    goalX = random(1, LABYRINTH_WIDTH - 1);
+    goalY = random(1, LABYRINTH_HEIGHT - 1);
   } while (labyrinth[goalY][goalX] == 1);
 }
 
-// Choose a random free cell for the player
 void placePlayer() {
   do {
-    playerX = random(1, 15);
-    playerY = random(1, 15);
+    playerX = random(1, LABYRINTH_WIDTH - 1);
+    playerY = random(1, LABYRINTH_HEIGHT - 1);
   } while (labyrinth[playerY][playerX] == 1);
-  playerDir = random(0, 4); // 0..3
+  playerDir = random(0, 4);  // Random direction between 0 and 3
 }
 
-// Check if a cell is free
 bool canMove(int x, int y) {
-  return (x >= 0 && x < 16 && y >= 0 && y < 16 && labyrinth[y][x] == 0);
+  return (x >= 0 && x < LABYRINTH_WIDTH &&
+          y >= 0 && y < LABYRINTH_HEIGHT &&
+          labyrinth[y][x] == 0);
 }
 
-// Render the forward/left/right "3D" view with bitmaps
 void renderView() {
   display.clearDisplay();
 
-  // Calculate front, left, right based on playerDir
+  // Calculate cell positions based on the player's direction.
   int frontX = playerX, frontY = playerY;
   int frontFarX = playerX, frontFarY = playerY;
   int leftX = playerX, leftY = playerY;
@@ -125,29 +141,27 @@ void renderView() {
   int rightX = playerX, rightY = playerY;
   int rightFarX = playerX, rightFarY = playerY;
 
-  if (playerDir == 0) { 
-    // facing up
-    frontY--;      frontFarY -= 2;
-    leftX--;       leftFarX = leftX;   leftFarY = leftY - 1;
-    rightX++;      rightFarX = rightX; rightFarY = rightY - 1;
-  } 
-  else if (playerDir == 1) { 
-    // facing right
-    frontX++;      frontFarX += 2;
-    leftY--;       leftFarY = leftY;   leftFarX = leftX + 1;
-    rightY++;      rightFarY = rightY; rightFarX = rightX + 1;
-  } 
-  else if (playerDir == 2) {
-    // facing down
-    frontY++;      frontFarY += 2;
-    leftX++;       leftFarX = leftX;   leftFarY = leftY + 1;
-    rightX--;      rightFarX = rightX; rightFarY = rightY + 1;
-  } 
-  else if (playerDir == 3) {
-    // facing left
-    frontX--;      frontFarX -= 2;
-    leftY++;       leftFarY = leftY;   leftFarX = leftX - 1;
-    rightY--;      rightFarY = rightY; rightFarX = rightX - 1;
+  switch(playerDir) {
+    case 0: // Up
+      frontY--;    frontFarY -= 2;
+      leftX--;     leftFarX = leftX;  leftFarY = leftY - 1;
+      rightX++;    rightFarX = rightX; rightFarY = rightY - 1;
+      break;
+    case 1: // Right
+      frontX++;    frontFarX += 2;
+      leftY--;     leftFarY = leftY;  leftFarX = leftX + 1;
+      rightY++;    rightFarY = rightY; rightFarX = rightX + 1;
+      break;
+    case 2: // Down
+      frontY++;    frontFarY += 2;
+      leftX++;     leftFarX = leftX;  leftFarY = leftY + 1;
+      rightX--;    rightFarX = rightX; rightFarY = rightY + 1;
+      break;
+    case 3: // Left
+      frontX--;    frontFarX -= 2;
+      leftY++;     leftFarY = leftY;  leftFarX = leftX - 1;
+      rightY--;    rightFarY = rightY; rightFarX = rightX - 1;
+      break;
   }
 
   // Left wall
@@ -156,19 +170,16 @@ void renderView() {
   } else {
     display.drawBitmap(0, 0, epd_bitmap_open_left, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
   }
-
   // Right wall
   if (!canMove(rightX, rightY)) {
     display.drawBitmap(0, 0, epd_bitmap_closed_right, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
   } else {
     display.drawBitmap(0, 0, epd_bitmap_open_right, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
   }
-
   // Front wall(s)
   if (!canMove(frontX, frontY)) {
     display.drawBitmap(0, 0, epd_bitmap_closed_front, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
   } else {
-    // front cell is open, check the second cell ahead
     if (!canMove(frontFarX, frontFarY)) {
       display.drawBitmap(0, 0, epd_bitmap_closed_front_far, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
     }
@@ -183,16 +194,11 @@ void renderView() {
       display.drawBitmap(0, 0, epd_bitmap_open_right_far, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
     }
   }
-
-  // If the goal is immediately ahead
   if (goalX == frontX && goalY == frontY) {
     display.drawBitmap(0, 0, epd_bitmap_hole, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
-  }
-  // Or if it is two cells ahead
-  else if (goalX == frontFarX && goalY == frontFarY) {
+  } else if (goalX == frontFarX && goalY == frontFarY) {
     display.drawBitmap(0, 0, epd_bitmap_hole_far, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
   }
-
   display.display();
 }
 
@@ -200,11 +206,11 @@ void moveForward() {
   int nextX = playerX;
   int nextY = playerY;
 
-  switch (playerDir) {
-    case 0: nextY--; break;  // up
-    case 1: nextX++; break;  // right
-    case 2: nextY++; break;  // down
-    case 3: nextX--; break;  // left
+  switch(playerDir) {
+    case 0: nextY--; break;
+    case 1: nextX++; break;
+    case 2: nextY++; break;
+    case 3: nextX--; break;
   }
 
   if (canMove(nextX, nextY)) {
@@ -212,41 +218,77 @@ void moveForward() {
     playerY = nextY;
   }
 
-  // Check win condition
   if (playerX == goalX && playerY == goalY) {
-    display.clearDisplay();
-    display.display();
-    digitalWrite(VICTORY_PIN, HIGH); // Activate victory pin (LED or buzzer)
-    while (true) { /* stop here */ }
+    completeGame();
   }
 }
 
 void turnLeft()  { playerDir = (playerDir + 3) % 4; }
 void turnRight() { playerDir = (playerDir + 1) % 4; }
 
+//--------------------------------------------------
+// Setup and Main Loop
+//--------------------------------------------------
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(BTN_LEFT,    INPUT_PULLUP);
+  pinMode(BTN_FORWARD, INPUT_PULLUP);
+  pinMode(BTN_RIGHT,   INPUT_PULLUP);
+  pinMode(VICTORY_PIN, OUTPUT);
+  digitalWrite(VICTORY_PIN, LOW);
+
+  if (!display.begin(SPI_MODE0, 0x3C)) {
+    Serial.println(F("Failed to initialize SH1106G display!"));
+    while (true);
+  }
+  display.clearDisplay();
+  display.display();
+  display.setTextColor(WHITE);
+
+  gameSlave.begin();
+  gameSlave.onGameStart(startGameCallback);
+  gameSlave.onGameEnd(endGameCallback);
+  Serial.println("Init completed.");
+}
+
 void loop() {
-  bool btnLeft    = digitalRead(BTN_LEFT);
-  bool btnForward = digitalRead(BTN_FORWARD);
-  bool btnRight   = digitalRead(BTN_RIGHT);
-
-  // Button press detected on falling edge (HIGH -> LOW)
-  if (!btnForward && lastBtnForward) {
-    moveForward();
-    renderView();
-    delay(200);
-  }
-  if (!btnLeft && lastBtnLeft) {
-    turnLeft();
-    renderView();
-    delay(200);
-  }
-  if (!btnRight && lastBtnRight) {
-    turnRight();
-    renderView();
-    delay(200);
+  if (resetRequested) {
+    processResetCommand();
   }
 
-  lastBtnLeft    = btnLeft;
-  lastBtnForward = btnForward;
-  lastBtnRight   = btnRight;
+  if (gameRunning && !gameCompleted) {
+    bool btnLeft    = digitalRead(BTN_LEFT);
+    bool btnForward = digitalRead(BTN_FORWARD);
+    bool btnRight   = digitalRead(BTN_RIGHT);
+
+    if (!btnForward && lastBtnForward) {
+      moveForward();
+      if (gameCompleted) {
+        return;
+      }
+      renderView();
+      delay(200);
+    }
+    if (!btnLeft && lastBtnLeft) {
+      turnLeft();
+      if (gameCompleted) {
+        return;
+      }
+      renderView();
+      delay(200);
+    }
+    if (!btnRight && lastBtnRight) {
+      turnRight();
+      if (gameCompleted) {
+        return;
+      }
+      renderView();
+      delay(200);
+    }
+
+    lastBtnLeft    = btnLeft;
+    lastBtnForward = btnForward;
+    lastBtnRight   = btnRight;
+  }
 }
