@@ -6,19 +6,19 @@ void Master::begin() {
     Wire.begin();
 }
 
-void Master::scanForModules() {
+void Master::discoverModules() {
     moduleCount = 0;
-    
+
     for (uint8_t address = 1; address < 127; address++) {
         Wire.beginTransmission(address);
-        Wire.write(CMD_IDENTIFY);  // ✅ Explicitly send IDENTIFY request
+        Wire.write(CMD_IDENTIFY);
         Wire.endTransmission();
-        
-        delay(2); // Small delay to allow processing
-        
+
+        delay(2);
+
         Wire.requestFrom(address, (uint8_t)1);  // Ask for a response
-        
-        if (Wire.available() && Wire.read() == CMD_IDENTIFY) { // ✅ Check correct response
+
+        if (Wire.available() && Wire.read() == CMD_IDENTIFY) {
             if (moduleCount < 10) {
                 moduleAddresses[moduleCount++] = address;
             }
@@ -36,6 +36,19 @@ void Master::endGame() {
     for (uint8_t i = 0; i < moduleCount; i++) {
         sendCommand(moduleAddresses[i], CMD_END_GAME);
     }
+}
+
+void Master::restartFailedModule(uint8_t index) {
+    if (index >= moduleCount) return;
+    setModuleStatus(index, STATUS_UNSOLVED);
+}
+
+void Master::setModuleStatus(uint8_t index, uint8_t status) {
+    if (index >= moduleCount) return;
+    Wire.beginTransmission(moduleAddresses[index]);
+    Wire.write(CMD_SET_STATUS);
+    Wire.write(status);
+    Wire.endTransmission();
 }
 
 uint8_t Master::getModuleStatus(uint8_t index) {
@@ -137,6 +150,12 @@ void Slave::receiveEvent(int numBytes) {
             if (Wire.available() >= 1) {
                 masterVersion = Wire.read();
                 if (versionReceivedCallback) versionReceivedCallback();
+            }
+            break;
+
+        case CMD_SET_STATUS:
+            if (Wire.available() >= 1) {
+                status = Wire.read();
             }
             break;
 

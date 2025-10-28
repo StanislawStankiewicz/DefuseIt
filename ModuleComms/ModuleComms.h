@@ -10,6 +10,7 @@
 #define CMD_GET_VERSION 0x04
 #define CMD_SET_VERSION 0x05
 #define CMD_IDENTIFY    0x06
+#define CMD_SET_STATUS  0x07
 
 #define STATUS_UNSOLVED 0x00
 #define STATUS_PASSED   0x01
@@ -21,10 +22,12 @@ class Master {
 public:
     Master(uint8_t version);
     void begin();
-    void scanForModules();
+    void discoverModules();
     void startGame();
     void endGame();
+    void restartFailedModule(uint8_t index);
     uint8_t getModuleStatus(uint8_t index);
+    void setModuleStatus(uint8_t index, uint8_t status);
     void sendVersion(uint8_t index);
     uint8_t getVersion() const;
     void setVersion(uint8_t newVersion);

@@ -14,8 +14,12 @@
 #define LOAD_PIN       8
 
 // TM1637 pins for the timer display
-#define DISPLAY1_CLK   9
-#define DISPLAY1_DIO   10
+#define DISPLAY1_CLK   10
+#define DISPLAY1_DIO   11
+
+// Switch pins
+#define SWITCH_PIN     12
+#define SWITCH_GND     13
 
 // Active-low digit patterns for 0–9 (dp g f e d c b a)
 const byte digitCode[10] = {
@@ -46,6 +50,19 @@ unsigned long lastTimerUpdate = 0;
 unsigned long lastBeepTime = 0;
 int beepInterval = initialInterval;
 
+// Switch and mistake variables
+bool switchOn = false;
+unsigned long lastSwitchOffTime = 0;
+int switchOffCount = 0;
+int mistakeCount = 0;
+const int maxMistakes = 3;
+bool handlingFailure = false;
+unsigned long failureStartTime = 0;
+unsigned long lastBlinkTime = 0;
+int blinkCount = 0;
+bool blinkingActive = false;
+int failedModuleIndex = -1;
+
 void setup() {
   Serial.begin(9600);
   Wire.begin();
@@ -59,13 +76,18 @@ void setup() {
   pinMode(SCLK_PIN, OUTPUT);
   pinMode(LOAD_PIN, OUTPUT);
 
+  // Switch pins setup
+  pinMode(SWITCH_PIN, INPUT_PULLUP);
+  pinMode(SWITCH_GND, OUTPUT);
+  digitalWrite(SWITCH_GND, LOW);
+
   timerDisplay.setBrightness(5);
 
   Serial.println("Master: Initializing...");
   master.begin();
 
-  Serial.println("Master: Scanning for modules...");
-  master.scanForModules();
+  Serial.println("Master: Discovering modules...");
+  master.discoverModules();
 
   Serial.print("Master: Found ");
   Serial.print(master.getModuleCount());
@@ -81,7 +103,56 @@ void setup() {
 }
 
 void loop() {
-  // Start game if button is pressed
+  // Handle switch for game start and reset
+  bool currentSwitchState = (digitalRead(SWITCH_PIN) == LOW);  // LOW means switch is on (connected to ground)
+  if (currentSwitchState != switchOn) {
+    switchOn = currentSwitchState;
+    if (!switchOn) {  // Switch turned off
+      unsigned long currentTime = millis();
+      if (currentTime - lastSwitchOffTime < 1000) {
+        switchOffCount++;
+        if (switchOffCount >= 3) {
+          // Reset everything
+          Serial.println("Master: Switch flipped off 3 times quickly - resetting game.");
+          master.endGame();
+          gameInProgress = false;
+          allSolved = false;
+          remainingTime = gameDurationSeconds;
+          lastTimerUpdate = 0;
+          lastBeepTime = 0;
+          beepInterval = initialInterval;
+          mistakeCount = 0;
+          handlingFailure = false;
+          blinkingActive = false;
+          digitalWrite(GREEN_LED_PIN, LOW);
+          digitalWrite(RED_LED_PIN, LOW);
+          displayTime(remainingTime);
+          displayVersion(0);  // FIX! this shows 0.0
+          switchOffCount = 0;
+        }
+      } else {
+        switchOffCount = 1;
+      }
+      lastSwitchOffTime = currentTime;
+    } else {  // Switch turned on
+      if (!gameInProgress) {
+        Serial.println("Master: Switch flipped on - starting game.");
+        randomSeed(millis());
+        master.setVersion(random(1, 100));
+        displayVersion(master.getVersion());
+        master.startGame();
+        gameInProgress = true;
+        remainingTime = gameDurationSeconds;
+        lastTimerUpdate = millis();
+        lastBeepTime = millis();
+        beepInterval = initialInterval;
+        beep();
+        delay(500);
+      }
+    }
+  }
+
+  // Start game if button is pressed (keeping for backward compatibility)
   if (!gameInProgress && digitalRead(BUTTON_PIN) == LOW) {
     Serial.println("Master: Button pressed - starting game.");
 
@@ -125,40 +196,87 @@ void loop() {
       Serial.println(beepInterval);
     }
 
-    // Check modules
-    allSolved = true;
-    bool failedModule = false;
-    for (uint8_t i = 0; i < master.getModuleCount(); i++) {
-      uint8_t status = master.getModuleStatus(i);
-      if (status == STATUS_UNSOLVED) {
-        allSolved = false;
-      }
-      if (status == STATUS_FAILED) {
-        failedModule = true;
-      }
-    }
-
-    // Win condition
-    if (allSolved) {
-      Serial.println("Master: All modules solved! Sending END_GAME signal.");
-      master.endGame();
-      digitalWrite(GREEN_LED_PIN, HIGH);
-      digitalWrite(RED_LED_PIN, LOW);
-      while (1); // Stop here
-    }
-
-    // Lose condition
-    if (failedModule || remainingTime == 0) {
-      Serial.println("Master: Game lost!");
-      master.endGame();
-      if (failedModule) {
-        Serial.println("Master: A module has failed!");
+    // Handle failure state if active
+    if (handlingFailure) {
+      unsigned long currentTime = millis();
+      if (currentTime - failureStartTime < 500) {
+        // During the 0.5s beep and flash
+        digitalWrite(RED_LED_PIN, HIGH);
+        tone(BUZZER_PIN, 500, 50);  // Half the tone (500Hz instead of 1000Hz)
       } else {
-        Serial.println("Master: Time ran out!");
+        // After beep, start blinking
+        if (!blinkingActive) {
+          blinkingActive = true;
+          lastBlinkTime = currentTime;
+          blinkCount = 0;
+        }
+        // Blink red LED every 5 seconds, number of blinks = mistake count
+        if (currentTime - lastBlinkTime >= 5000) {
+          if (blinkCount < mistakeCount) {
+            digitalWrite(RED_LED_PIN, HIGH);
+            delay(200);
+            digitalWrite(RED_LED_PIN, LOW);
+            blinkCount++;
+            lastBlinkTime = currentTime;
+          } else {
+            // Blinking done, restart the failed module
+            Serial.print("Master: Restarting module ");
+            Serial.println(failedModuleIndex);
+            master.restartFailedModule(failedModuleIndex);
+            handlingFailure = false;
+            blinkingActive = false;
+            digitalWrite(RED_LED_PIN, LOW);
+          }
+        }
       }
-      digitalWrite(RED_LED_PIN, HIGH);
-      tone(BUZZER_PIN, 1000, 2000);
-      while (1); // Stop here
+    } else {
+      // Check modules
+      allSolved = true;
+      failedModuleIndex = -1;
+      for (uint8_t i = 0; i < master.getModuleCount(); i++) {
+        uint8_t status = master.getModuleStatus(i);
+        if (status == STATUS_UNSOLVED) {
+          allSolved = false;
+        }
+        if (status == STATUS_FAILED) {
+          failedModuleIndex = i;
+          // Assuming only one module fails at a time, break after finding the first
+          break;
+        }
+      }
+
+      // Win condition
+      if (allSolved) {
+        Serial.println("Master: All modules solved! Sending END_GAME signal.");
+        master.endGame();
+        digitalWrite(GREEN_LED_PIN, HIGH);
+        digitalWrite(RED_LED_PIN, LOW);
+        while (1); // Stop here
+      }
+
+      // Lose condition - only if time runs out or max mistakes reached
+      if (remainingTime == 0 || mistakeCount >= maxMistakes) {
+        Serial.println("Master: Game lost!");
+        master.endGame();
+        if (mistakeCount >= maxMistakes) {
+          Serial.println("Master: Too many mistakes!");
+        } else {
+          Serial.println("Master: Time ran out!");
+        }
+        digitalWrite(RED_LED_PIN, HIGH);
+        tone(BUZZER_PIN, 1000, 2000);
+        while (1); // Stop here
+      }
+
+      // Handle module failure
+      if (failedModuleIndex != -1 && !handlingFailure) {
+        mistakeCount++;
+        Serial.print("Master: Module failed! Mistake count: ");
+        Serial.println(mistakeCount);
+        handlingFailure = true;
+        failureStartTime = millis();
+        // Don't end game yet, just handle failure
+      }
     }
 
     delay(50);
