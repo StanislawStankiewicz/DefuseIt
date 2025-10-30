@@ -46,7 +46,7 @@ public:
     void begin();
     void setStatus(uint8_t newStatus);
     uint8_t getStatus();
-    uint8_t getMasterVersion() const;
+    uint8_t getVersion();
 
     void onGameStart(SlaveCallback callback);
     void onGameEnd(SlaveCallback callback);

@@ -143,7 +143,7 @@ void checkModuleState() {
 
 void onGameStart() {
     Serial.println("Game started");
-    int version = module.getMasterVersion();
+    int version = module.getVersion();
     Serial.print("Received version: ");
     Serial.println(version);
     currentMode = determineMode(version);

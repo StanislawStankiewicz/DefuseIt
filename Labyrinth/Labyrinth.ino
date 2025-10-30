@@ -81,7 +81,7 @@ void resetGameState() {
 }
 
 void startGameCallback() {
-  randomSeed(gameSlave.getMasterVersion());
+  randomSeed(gameSlave.getVersion());
   resetGameState();
   gameRunning = true;
   renderView();

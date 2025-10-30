@@ -3,24 +3,45 @@
 Master::Master(uint8_t version) : version(version), moduleCount(0) {}
 
 void Master::begin() {
+    Serial.println("Wire initializing...");
     Wire.begin();
+    Serial.println("Wire initialized.");
+}
+
+void Master::sendVersion(uint8_t index) {
+    if (index >= moduleCount) return;
+    Wire.beginTransmission(moduleAddresses[index]);
+    Wire.write(CMD_SET_VERSION);
+    Wire.write((uint8_t)(version >> 8));
+    Wire.write((uint8_t)(version & 0xFF));
+    Wire.endTransmission();
 }
 
 void Master::discoverModules() {
     moduleCount = 0;
 
     for (uint8_t address = 1; address < 127; address++) {
+        Serial.print("Scanning address 0x");
+        Serial.println(address, HEX);
         Wire.beginTransmission(address);
         Wire.write(CMD_IDENTIFY);
-        Wire.endTransmission();
+        int result = Wire.endTransmission();
+        Serial.print("Transmission result: ");
+        Serial.println(result);
 
         delay(2);
 
-        Wire.requestFrom(address, (uint8_t)1);  // Ask for a response
+        Wire.requestFrom(address, (uint8_t)1);
+        Serial.print("Request from 0x");
+        Serial.print(address, HEX);
+        Serial.print(": available=");
+        Serial.println(Wire.available());
 
         if (Wire.available() && Wire.read() == CMD_IDENTIFY) {
             if (moduleCount < 10) {
                 moduleAddresses[moduleCount++] = address;
+                Serial.print("Found module at 0x");
+                Serial.println(address, HEX);
             }
         }
     }
@@ -29,6 +50,7 @@ void Master::discoverModules() {
 void Master::startGame() {
     for (uint8_t i = 0; i < moduleCount; i++) {
         sendCommand(moduleAddresses[i], CMD_START_GAME);
+        sendVersion(i);
     }
 }
 
@@ -59,15 +81,6 @@ uint8_t Master::getModuleStatus(uint8_t index) {
     Wire.endTransmission();
     Wire.requestFrom(moduleAddresses[index], (uint8_t)1);
     return Wire.available() ? Wire.read() : STATUS_UNSOLVED;
-}
-
-void Master::sendVersion(uint8_t index) {
-    if (index >= moduleCount) return;
-    Wire.beginTransmission(moduleAddresses[index]);
-    Wire.write(CMD_SET_VERSION);
-    Wire.write((uint8_t)(version >> 8));
-    Wire.write((uint8_t)(version & 0xFF));
-    Wire.endTransmission();
 }
 
 uint8_t Master::getVersion() const {
@@ -116,7 +129,7 @@ uint8_t Slave::getStatus() {
     return status;
 }
 
-uint8_t Slave::getMasterVersion() const {
+uint8_t Slave::getVersion() {
     return masterVersion;
 }
 
@@ -133,9 +146,9 @@ void Slave::onVersionReceived(SlaveCallback callback) {
 }
 
 void Slave::receiveEvent(int numBytes) {
-    if (numBytes < 1) return;  // Ignore empty messages
+    if (numBytes < 1) return;
 
-    command = Wire.read();  // Store last received command
+    command = Wire.read();
 
     switch (command) {
         case CMD_START_GAME:
@@ -169,10 +182,10 @@ void Slave::receiveEvent(int numBytes) {
 
 void Slave::requestEvent() {
     if (command == CMD_GET_STATUS) {
-        Wire.write(status);  // Respond with current status
+        Wire.write(status);
     } else if (command == CMD_IDENTIFY) {
-        Wire.write(CMD_IDENTIFY);  // Respond with IDENTIFY only during scan
+        Wire.write(CMD_IDENTIFY);
     } else {
-        Wire.write(0x00);  // Default unknown response
+        Wire.write(0x00);
     }
 }
