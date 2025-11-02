@@ -11,12 +11,14 @@
 #define CMD_SET_VERSION 0x05
 #define CMD_IDENTIFY    0x06
 #define CMD_SET_STATUS  0x07
+#define CMD_SET_MISTAKES 0x08 // ogarnac
 
 #define STATUS_UNSOLVED 0x00
 #define STATUS_PASSED   0x01
 #define STATUS_FAILED   0x02
 
-typedef void (*SlaveCallback)();
+typedef void (*GameLoop)();
+typedef void (*SetInitialState)();
 
 class Master {
 public:
@@ -29,38 +31,36 @@ public:
     uint8_t getModuleStatus(uint8_t index);
     void setModuleStatus(uint8_t index, uint8_t status);
     void sendVersion(uint8_t index);
+    void sendMistakes(uint8_t n);
     uint8_t getVersion() const;
     void setVersion(uint8_t newVersion);
     uint8_t getModuleCount() const;
 
 private:
     uint8_t version;
-    uint8_t moduleAddresses[10]; // Store up to 10 module addresses
+    uint8_t moduleAddresses[11];
     uint8_t moduleCount;
     void sendCommand(uint8_t moduleAddress, uint8_t command);
 };
 
 class Slave {
 public:
-    Slave(uint8_t address);
+    Slave(uint8_t address, GameLoop loop, SetInitialState setState, uint8_t pin);
     void begin();
     void setStatus(uint8_t newStatus);
-    uint8_t getStatus();
     uint8_t getVersion();
-
-    void onGameStart(SlaveCallback callback);
-    void onGameEnd(SlaveCallback callback);
-    void onVersionReceived(SlaveCallback callback);
 
 private:
     static uint8_t moduleAddress;
     static uint8_t status;
     static uint8_t masterVersion;
+    static uint8_t mistakes;
     static uint8_t command;
+    static uint8_t led_pin;
+    static bool isGameActive;
 
-    static SlaveCallback gameStartCallback;
-    static SlaveCallback gameEndCallback;
-    static SlaveCallback versionReceivedCallback;
+    static GameLoop gameLoop;
+    static SetInitialState setInitialState;
 
     static void receiveEvent(int numBytes);
     static void requestEvent();

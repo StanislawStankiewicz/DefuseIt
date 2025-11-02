@@ -106,13 +106,20 @@ uint8_t Slave::moduleAddress = 0;
 uint8_t Slave::status = STATUS_UNSOLVED;
 uint8_t Slave::masterVersion = 0;
 uint8_t Slave::command = 0;
+uint8_t Slave::mistakes = 0;
+uint8_t Slave::led_pin;
+bool Slave::isGameActive = false;
 
-SlaveCallback Slave::gameStartCallback = nullptr;
-SlaveCallback Slave::gameEndCallback = nullptr;
-SlaveCallback Slave::versionReceivedCallback = nullptr;
+GameLoop Slave::gameLoop = nullptr;
+SetInitialState Slave::setInitialState = nullptr;
 
-Slave::Slave(uint8_t address) {
+Slave::Slave(uint8_t address, GameLoop loop, SetInitialState setState, uint8_t pin) {
     moduleAddress = address;
+    led_pin = pin;
+    gameLoop = loop;
+    setInitialState = setState
+
+    pinMode(led_pin, OUTPUT);
 }
 
 void Slave::begin() {
@@ -121,28 +128,37 @@ void Slave::begin() {
     Wire.onRequest(requestEvent);
 }
 
-void Slave::setStatus(uint8_t newStatus) {
-    status = newStatus;
-}
-
-uint8_t Slave::getStatus() {
-    return status;
-}
-
 uint8_t Slave::getVersion() {
     return masterVersion;
 }
 
-void Slave::onGameStart(SlaveCallback callback) {
-    gameStartCallback = callback;
+void startGame() {
+    digitalWrite(led_pin, LOW);
+    setInitialState();
+    status = STATUS_UNSOLVED;
+    isGameActive = true;
 }
 
-void Slave::onGameEnd(SlaveCallback callback) {
-    gameEndCallback = callback;
+void slaveLoop() {
+    if (isGameActive) {
+        game_loop();
+    }
 }
 
-void Slave::onVersionReceived(SlaveCallback callback) {
-    versionReceivedCallback = callback;
+void pass() {
+    status = STATUS_PASSED;
+    isGameActive = false;
+    digitalWrite(led_pin, HIGH);
+}
+
+void fail() {
+    status = STATUS_FAILED;
+    isGameActive = false;
+}
+
+void endGame() {
+    digitalWrite(led_pin, LOW);
+    isGameActive = false;
 }
 
 void Slave::receiveEvent(int numBytes) {
@@ -152,17 +168,16 @@ void Slave::receiveEvent(int numBytes) {
 
     switch (command) {
         case CMD_START_GAME:
-            if (gameStartCallback) gameStartCallback();
+            if (gameStartCallback) startGame();
             break;
 
         case CMD_END_GAME:
-            if (gameEndCallback) gameEndCallback();
+            if (gameEndCallback) endGame();
             break;
 
         case CMD_SET_VERSION:
             if (Wire.available() >= 1) {
                 masterVersion = Wire.read();
-                if (versionReceivedCallback) versionReceivedCallback();
             }
             break;
 
