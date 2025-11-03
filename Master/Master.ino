@@ -41,6 +41,7 @@ const unsigned long SWITCH_RESET_TIMEOUT = 1000;  // 1 second
 const unsigned long BEEP_DURATION = 500;          // 0.5 seconds
 const unsigned long BLINK_INTERVAL = 5000;        // 5 seconds
 const int BLINK_DURATION = 200;                   // 200ms
+const int BLINK_GAP = 300;                        // 300ms gap between blinks
 
 Master master(0);
 TM1637Display timerDisplay(DISPLAY_CLK, DISPLAY_DIO);
@@ -62,6 +63,10 @@ unsigned long failureStartTime = 0;
 unsigned long lastBlinkTime = 0;
 int blinkCount = 0;
 bool blinkingActive = false;
+bool isBlinking = false;
+unsigned long blinkStartTime = 0;
+int currentBlink = 0;
+unsigned long lastBlinkEndTime = 0;
 int failedModuleIndex = -1;
 bool isGameEnded = false;
 
@@ -168,10 +173,20 @@ void resetGame() {
   mistakeCount = 0;
   isHandlingFailure = false;
   blinkingActive = false;
+  isBlinking = false;
+  blinkStartTime = 0;
+  currentBlink = 0;
+  lastBlinkEndTime = 0;
   digitalWrite(GREEN_LED_PIN, LOW);
   digitalWrite(RED_LED_PIN, LOW);
   displayTime(remainingTime);
   clearVersionDisplay();
+  
+  Serial.println("Master: Rescanning modules...");
+  master.discoverModules();
+  Serial.print("Master: Found ");
+  Serial.print(master.getModuleCount());
+  Serial.println(" module(s)");
 }
 
 void handleSwitch() {
@@ -239,6 +254,37 @@ void handleBeeps() {
   }
 }
 
+void handleMistakeBlinking() {
+  // Handle passive mistake blinking reminder
+  if (blinkingActive) {
+    unsigned long currentTime = millis();
+    
+    if (!isBlinking) {
+      // Not currently blinking, check if time for next blink
+      if (currentTime - lastBlinkTime >= BLINK_INTERVAL) {
+        if (currentBlink < mistakeCount && currentTime - lastBlinkEndTime >= BLINK_GAP) {
+          // Start next blink in sequence
+          digitalWrite(RED_LED_PIN, HIGH);
+          blinkStartTime = currentTime;
+          isBlinking = true;
+          currentBlink++;
+        } else if (currentBlink >= mistakeCount) {
+          // Sequence complete, reset for next cycle
+          currentBlink = 0;
+          lastBlinkTime = currentTime;
+        }
+      }
+    } else {
+      // Currently blinking, check if time to turn off
+      if (currentTime - blinkStartTime >= BLINK_DURATION) {
+        digitalWrite(RED_LED_PIN, LOW);
+        isBlinking = false;
+        lastBlinkEndTime = currentTime;
+      }
+    }
+  }
+}
+
 void handleFailure() {
   // Handle failure state if active
   if (isHandlingFailure) {
@@ -248,30 +294,20 @@ void handleFailure() {
       digitalWrite(RED_LED_PIN, HIGH);
       tone(BUZZER_PIN, 500, 50);  // Half the tone (500Hz instead of 1000Hz)
     } else {
-      // After beep, start blinking
-      if (!blinkingActive) {
-        blinkingActive = true;
-        lastBlinkTime = currentTime;
-        blinkCount = 0;
-      }
-      // Blink red LED every 5 seconds, number of blinks = mistake count
-      if (currentTime - lastBlinkTime >= BLINK_INTERVAL) {
-        if (blinkCount < mistakeCount) {
-          digitalWrite(RED_LED_PIN, HIGH);
-          delay(BLINK_DURATION);
-          digitalWrite(RED_LED_PIN, LOW);
-          blinkCount++;
-          lastBlinkTime = currentTime;
-        } else {
-          // Blinking done, restart the failed module
-          Serial.print("Master: Restarting module ");
-          Serial.println(failedModuleIndex);
-          master.restartFailedModule(failedModuleIndex);
-          isHandlingFailure = false;
-          blinkingActive = false;
-          digitalWrite(RED_LED_PIN, LOW);
-        }
-      }
+      // Penalty done, start passive blinking reminder
+      Serial.print("Master: Restarting module ");
+      Serial.println(failedModuleIndex);
+      master.restartFailedModule(failedModuleIndex);
+      master.sendCommand(master.getModuleAddress(failedModuleIndex), CMD_START_GAME);
+      blinkingActive = true;
+      lastBlinkTime = currentTime;
+      blinkCount = 0;
+      isBlinking = false;
+      blinkStartTime = 0;
+      currentBlink = 0;
+      lastBlinkEndTime = 0;
+      isHandlingFailure = false;
+      digitalWrite(RED_LED_PIN, LOW);
     }
   }
 }
@@ -282,12 +318,11 @@ void checkModules() {
   failedModuleIndex = -1;
   for (uint8_t i = 0; i < master.getModuleCount(); i++) {
     uint8_t status = master.getModuleStatus(i);
-    if (status == STATUS_UNSOLVED) {
+    if (status != STATUS_PASSED) {
       areAllModulesSolved = false;
     }
     if (status == STATUS_FAILED) {
       failedModuleIndex = i;
-      // Assuming only one module fails at a time, break after finding the first
       break;
     }
   }
@@ -322,10 +357,21 @@ void checkWinLose() {
   // Handle module failure
   if (failedModuleIndex != -1 && !isHandlingFailure) {
     mistakeCount++;
-    Serial.print("Master: Module failed! Mistake count: ");
-    Serial.println(mistakeCount);
-    isHandlingFailure = true;
-    failureStartTime = millis();
+    if (mistakeCount >= maxMistakes) {
+      // Final mistake - end game immediately without penalty
+      Serial.println("Master: Game lost - too many mistakes!");
+      master.endGame();
+      digitalWrite(RED_LED_PIN, HIGH);
+      tone(BUZZER_PIN, 1000, 2000);
+      isGameInProgress = false;
+      isGameEnded = true;
+    } else {
+      // Normal failure - apply penalty
+      Serial.print("Master: Module failed! Mistake count: ");
+      Serial.println(mistakeCount);
+      isHandlingFailure = true;
+      failureStartTime = millis();
+    }
   }
 }
 
@@ -343,6 +389,7 @@ void loop() {
   if (isGameInProgress) {
     updateGameTimer();
     handleBeeps();
+    handleMistakeBlinking();
 
     if (isHandlingFailure) {
       handleFailure();

@@ -21,27 +21,18 @@ void Master::discoverModules() {
     moduleCount = 0;
 
     for (uint8_t address = 1; address < 127; address++) {
-        Serial.print("Scanning address 0x");
         Serial.println(address, HEX);
         Wire.beginTransmission(address);
         Wire.write(CMD_IDENTIFY);
         int result = Wire.endTransmission();
-        Serial.print("Transmission result: ");
-        Serial.println(result);
 
         delay(2);
 
         Wire.requestFrom(address, (uint8_t)1);
-        Serial.print("Request from 0x");
-        Serial.print(address, HEX);
-        Serial.print(": available=");
-        Serial.println(Wire.available());
 
         if (Wire.available() && Wire.read() == CMD_IDENTIFY) {
             if (moduleCount < 10) {
                 moduleAddresses[moduleCount++] = address;
-                Serial.print("Found module at 0x");
-                Serial.println(address, HEX);
             }
         }
     }
@@ -95,6 +86,11 @@ uint8_t Master::getModuleCount() const {
     return moduleCount;
 }
 
+uint8_t Master::getModuleAddress(uint8_t index) const {
+    if (index >= moduleCount) return 0;
+    return moduleAddresses[index];
+}
+
 void Master::sendCommand(uint8_t moduleAddress, uint8_t command) {
     Wire.beginTransmission(moduleAddress);
     Wire.write(command);
@@ -117,7 +113,7 @@ Slave::Slave(uint8_t address, GameLoop loop, SetInitialState setState, uint8_t p
     moduleAddress = address;
     led_pin = pin;
     gameLoop = loop;
-    setInitialState = setState
+    setInitialState = setState;
 
     pinMode(led_pin, OUTPUT);
 }
@@ -132,31 +128,31 @@ uint8_t Slave::getVersion() {
     return masterVersion;
 }
 
-void startGame() {
+void Slave::startGame() {
     digitalWrite(led_pin, LOW);
     setInitialState();
     status = STATUS_UNSOLVED;
     isGameActive = true;
 }
 
-void slaveLoop() {
+void Slave::slaveLoop() {
     if (isGameActive) {
-        game_loop();
+        gameLoop();
     }
 }
 
-void pass() {
+void Slave::pass() {
     status = STATUS_PASSED;
     isGameActive = false;
     digitalWrite(led_pin, HIGH);
 }
 
-void fail() {
+void Slave::fail() {
     status = STATUS_FAILED;
     isGameActive = false;
 }
 
-void endGame() {
+void Slave::endGame() {
     digitalWrite(led_pin, LOW);
     isGameActive = false;
 }
@@ -168,11 +164,11 @@ void Slave::receiveEvent(int numBytes) {
 
     switch (command) {
         case CMD_START_GAME:
-            if (gameStartCallback) startGame();
+            Slave::startGame();
             break;
 
         case CMD_END_GAME:
-            if (gameEndCallback) endGame();
+            Slave::endGame();
             break;
 
         case CMD_SET_VERSION:
@@ -185,9 +181,6 @@ void Slave::receiveEvent(int numBytes) {
             if (Wire.available() >= 1) {
                 status = Wire.read();
             }
-            break;
-
-        case CMD_GET_STATUS:
             break;
 
         default:

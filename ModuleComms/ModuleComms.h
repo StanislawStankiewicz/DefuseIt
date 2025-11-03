@@ -7,11 +7,10 @@
 #define CMD_START_GAME  0x01
 #define CMD_END_GAME    0x02
 #define CMD_GET_STATUS  0x03
-#define CMD_GET_VERSION 0x04
-#define CMD_SET_VERSION 0x05
-#define CMD_IDENTIFY    0x06
-#define CMD_SET_STATUS  0x07
-#define CMD_SET_MISTAKES 0x08 // ogarnac
+#define CMD_SET_STATUS  0x04
+#define CMD_GET_VERSION 0x05
+#define CMD_SET_VERSION 0x06
+#define CMD_IDENTIFY    0x07
 
 #define STATUS_UNSOLVED 0x00
 #define STATUS_PASSED   0x01
@@ -31,24 +30,30 @@ public:
     uint8_t getModuleStatus(uint8_t index);
     void setModuleStatus(uint8_t index, uint8_t status);
     void sendVersion(uint8_t index);
-    void sendMistakes(uint8_t n);
     uint8_t getVersion() const;
     void setVersion(uint8_t newVersion);
     uint8_t getModuleCount() const;
+    uint8_t getModuleAddress(uint8_t index) const;
+    void sendCommand(uint8_t moduleAddress, uint8_t command);
 
 private:
     uint8_t version;
     uint8_t moduleAddresses[11];
     uint8_t moduleCount;
-    void sendCommand(uint8_t moduleAddress, uint8_t command);
 };
+
+typedef void (*SlaveCallback)();
 
 class Slave {
 public:
     Slave(uint8_t address, GameLoop loop, SetInitialState setState, uint8_t pin);
     void begin();
-    void setStatus(uint8_t newStatus);
     uint8_t getVersion();
+    static void startGame();
+    void slaveLoop();
+    void pass();
+    void fail();
+    static void endGame();
 
 private:
     static uint8_t moduleAddress;
