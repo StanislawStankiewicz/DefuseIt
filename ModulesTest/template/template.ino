@@ -4,9 +4,9 @@
 #define BUTTON_PIN 2
 #define LED_PIN 3
 
-Slave module(0x10, loop, setInitialState, LED_PIN);
+Slave module(0x10, loop, resetState, LED_PIN);
 
-void setInitialState() {
+void resetState() {
     pinMode(BUTTON_PIN, INPUT_PULLUP);
     pinMode(LED_PIN, OUTPUT);
 }

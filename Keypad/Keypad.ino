@@ -1,19 +1,18 @@
 #include <LiquidCrystal.h>
 #include "ModuleComms.h"
 
-const int rs = A0, en = A1, d4 = A2, d5 = A3, d6 = A4, d7 = A5;
+
+const int rs = 11, en = 12, d4 = 13, d5 = A0, d6 = A1, d7 = A2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
-const int rowPins[4] = {6, 7, 8, 9};
-const int colPins[4] = {10, 11, 12, 13};
+const int rowPins[4] = {3, 4, 5, 6};
+const int colPins[4] = {7, 8, 9, 10};
 char keymap[4][4] = {
-  {'1', '2', '3', 'A'},
-  {'4', '5', '6', 'B'},
-  {'7', '8', '9', 'C'},
-  {'*', '0', '#', 'D'}
-};
-
-const int dataPin = 5, clockPin = 4, latchPin = 3;
+  {'D', '#', '0', '*'},
+  {'C', '9', '8', '7'},
+  {'B', '6', '5', '4'},
+  {'A', '3', '2', '1'}
+}; 
 const int moduleSolvedPin = 2;
 
 enum Mode { MATH, BINARY };
@@ -25,10 +24,30 @@ int correctAnswer;
 int puzzlesSolved = 0;
 int requiredPuzzles;
 int mistakesLeft;
-Slave module(0x10);
-bool gameStarted = false;
 
-Mode determineMode(int version) {
+const uint8_t SLAVE_ADDRESS = 0x12;
+void gameLoop();
+void resetState();
+Slave module(SLAVE_ADDRESS, gameLoop, resetState, moduleSolvedPin);
+
+bool updateDisplay = false;
+String lastBinary = "";
+
+void lcdClearLine(int row) {
+  lcd.setCursor(0, row);
+  for (int i = 0; i < 16; i++) lcd.print(' ');
+  lcd.setCursor(0, row);
+}
+
+void lcdPrintLine(int row, const String &s) {
+  lcd.setCursor(0, row);
+  lcd.print(s);
+  int remaining = 16 - s.length();
+  for (int i = 0; i < remaining; i++) lcd.print(' ');
+  lcd.setCursor(0, row);
+}
+
+Mode selectMode(int version) {
     if (version % 2 == 0) {
         requiredPuzzles = 1;
         mistakesLeft = 1;
@@ -38,8 +57,6 @@ Mode determineMode(int version) {
         mistakesLeft = 1;
         return MATH;
     }
-    Serial.print("Mistakes allowed: ");
-    Serial.println(mistakesLeft);
 }
 
 void generateAddition() {
@@ -50,26 +67,24 @@ void generateAddition() {
 }
 
 void generateEquation() {
-    Serial.println("Generating new equation");
-    if (currentMode == MATH) {
-        switch (random(0, 4)) {
-            case 0: generateAddition(); break;
-            case 1: generateSubtraction(); break;
-            case 2: generateMultiplication(); break;
-            case 3: generateDivision(); break;
-        }
-    } else {
-        int randomNumber = random(0, 256);
-        Serial.print("Displaying binary number: ");
-        Serial.println(randomNumber);
-        digitalWrite(latchPin, LOW);
-        shiftOut(dataPin, clockPin, MSBFIRST, randomNumber);
-        digitalWrite(latchPin, HIGH);
-        correctAnswer = randomNumber;
-        currentEquation = "Enter number:";
+  if (currentMode == MATH) {
+    switch (random(0, 4)) {
+      case 0: generateAddition(); break;
+      case 1: generateSubtraction(); break;
+      case 2: generateMultiplication(); break;
+      case 3: generateDivision(); break;
     }
-    lcd.clear();
-    lcd.print(currentEquation);
+    lastBinary = "";
+  } else {
+    int randomNumber = random(0, 256);
+    correctAnswer = randomNumber;
+    currentEquation = String("Number: ") + String(randomNumber);
+    lastBinary = "";
+    for (int b = 7; b >= 0; b--) {
+      lastBinary += ((randomNumber >> b) & 1) ? '1' : '0';
+    }
+  }
+  updateDisplay = true;
 }
 
 void generateSubtraction() {
@@ -111,7 +126,7 @@ char scanKeypad() {
     for (int col = 0; col < 4; col++) {
       if (digitalRead(colPins[col]) == LOW) {
         delay(50); // Debounce delay
-        while (digitalRead(colPins[col]) == LOW); // Wait for key release
+        while (digitalRead(colPins[col]) == LOW);
         char key = keymap[row][col];
         digitalWrite(rowPins[row], HIGH);
         return key;
@@ -119,92 +134,93 @@ char scanKeypad() {
     }
     digitalWrite(rowPins[row], HIGH);
   }
-  return '\0'; // No key pressed
+  return '\0';
 }
 
 void checkModuleState() {
-    if (puzzlesSolved >= requiredPuzzles) {
-        Serial.println("Module solved");
-        module.setStatus(STATUS_PASSED);
-        digitalWrite(moduleSolvedPin, HIGH);
-        lcd.clear();
-        lcd.print("Module solved");
-        return;
-    }
+  if (puzzlesSolved >= requiredPuzzles) {
+    Serial.println("Module solved");
+    module.pass();
+    return;
+  }
 
-    if (mistakesLeft <= 0) {
-        Serial.println("Module failed");
-        module.setStatus(STATUS_FAILED);
-        lcd.clear();
-        lcd.print("Module failed");
-        gameStarted = false;
-    }
+  if (mistakesLeft <= 0) {
+    Serial.println("Module failed");
+    module.fail();
+  }
 }
 
-void onGameStart() {
-    Serial.println("Game started");
-    int version = module.getVersion();
-    Serial.print("Received version: ");
-    Serial.println(version);
-    currentMode = determineMode(version);
-    puzzlesSolved = 0;
-    module.setStatus(STATUS_UNSOLVED);
-    digitalWrite(moduleSolvedPin, LOW);
-    gameStarted = true;
-    generateEquation();
+void resetState() {
+  currentMode = selectMode(module.getVersion());
+  generateEquation();
+  randomSeed(millis() + module.getVersion());
+  lcd.clear();
 }
 
-void onGameEnd() {
-    Serial.println("Game ended");
-    gameStarted = false;
+void gameLoop() {
+  if (updateDisplay) {
+    if (currentMode == BINARY && lastBinary.length() > 0) {
+      lcd.clear();
+      lcdPrintLine(0, lastBinary);
+    } else {
+      lcd.clear();
+      lcdPrintLine(0, currentEquation);
+    }
+    updateDisplay = false;
+  }
+
+  char key = scanKeypad();
+  if (key != '\0') {
+    if (key >= '0' && key <= '9') {
+      userInput += key;
+      lcd.setCursor(0, 1);
+      lcd.print(userInput);
+      Serial.print("LCD line2: ");
+      Serial.println(userInput);
+    } else if (key == 'A') {
+      int userAnswer = userInput.toInt();
+      lcd.clear();
+      if (userAnswer == correctAnswer) {
+        puzzlesSolved++;
+        if (puzzlesSolved >= requiredPuzzles) {
+          Serial.println("Module solved");
+          module.pass();
+        } else {
+          generateEquation();
+        }
+      } else {
+        mistakesLeft--;
+        if (mistakesLeft <= 0) {
+          Serial.println("Module failed");
+          module.fail();
+        } else {
+          Serial.print("Incorrect. Mistakes left: ");
+          Serial.println(mistakesLeft);
+          delay(random(1000, 10000));
+          generateEquation();
+        }
+      }
+      userInput = "";
+    } else if (key == '*') {
+      Serial.println("User cleared input");
+      userInput = "";
+      lcdClearLine(1);
+      Serial.println("LCD line2 cleared");
+    }
+  }
 }
 
 void setup() {
-    Serial.begin(9600);
-    lcd.begin(16, 2);
-    pinMode(dataPin, OUTPUT);
-    pinMode(clockPin, OUTPUT);
-    pinMode(latchPin, OUTPUT);
-    pinMode(moduleSolvedPin, OUTPUT);
-    digitalWrite(moduleSolvedPin, LOW);
-    initKeypad();
-    module.begin();
-    module.onGameStart(onGameStart);
-    module.onGameEnd(onGameEnd);
-    Serial.println("Module initialized");
+  Serial.begin(9600);
+  lcd.begin(16, 2);
+  lcd.clear();
+  initKeypad();
+  pinMode(moduleSolvedPin, OUTPUT);
+  digitalWrite(moduleSolvedPin, LOW);
+  module.begin();
+  Serial.println("Module initialized");
 }
 
 void loop() {
-    if (!gameStarted || module.getStatus() == STATUS_PASSED || module.getStatus() == STATUS_FAILED) return;
-    char key = scanKeypad();
-    if (key != '\0') {
-        if (key >= '0' && key <= '9') {
-            userInput += key;
-            lcd.setCursor(0, 1);
-            lcd.print(userInput);
-        } else if (key == 'A') {
-            int userAnswer = userInput.toInt();
-            lcd.clear();
-            if (userAnswer == correctAnswer) {
-                puzzlesSolved++;
-            } else {
-                mistakesLeft--;
-                if (mistakesLeft > 0) {
-                    Serial.print("Incorrect. Mistakes left: ");
-                    Serial.println(mistakesLeft);
-                    lcd.print("Mistakes left: ");
-                    lcd.print(mistakesLeft);
-                    delay(random(0, 10000));
-                }
-            }
-            userInput = "";
-            checkModuleState();
-            if (module.getStatus() == STATUS_UNSOLVED) generateEquation();
-        } else if (key == '*') {
-            Serial.println("User cleared input");
-            userInput = "";
-            lcd.setCursor(0, 1);
-            lcd.print("                ");
-        }
-    }
+  module.slaveLoop();
 }

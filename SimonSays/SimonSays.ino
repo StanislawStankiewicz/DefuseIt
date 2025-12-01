@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #include "ModuleComms.h"
 
-const int LED_PINS[4] = {5, 6, 7, 8};
-const int BUTTON_PINS[4] = {9, 10, 11, 12};
+const int LED_PINS[4] = {12, 11, 10, 9};
+const int BUTTON_PINS[4] = {5, 6, 7, 8};
 const int SPEAKER_PIN = 3;
 
 const int NOTES[4] = {262, 330, 392, 494};
@@ -32,9 +32,9 @@ unsigned long lastCompletionTime = 0;
 const uint8_t SLAVE_ADDRESS = 0x11;
 
 void gameLoop();
-void setInitialState();
+void resetState();
 
-Slave slave(SLAVE_ADDRESS, gameLoop, setInitialState, 2);
+Slave slave(SLAVE_ADDRESS, gameLoop, resetState, 2);
 bool isWaiting = false;
 unsigned long showTimer = 0;
 int showIndex = 0;
@@ -45,12 +45,6 @@ int pressedButton = -1;
 unsigned long pressStartTime = 0;
 
 void gameLoop() {
-  Serial.print("Sequemce:");
-  for (int i = 0; i < sequenceLength; i++) {
-    Serial.print(" ");
-    Serial.print(sequence[i]);
-  }
-  Serial.println();
   switch (currentState) {
     case UNENGAGED:
       handleUnengagedState();
@@ -110,10 +104,7 @@ void handleButtonPressInUnengaged() {
         lastCompletionTime = millis();
         isWaiting = true;
       } else {
-        Serial.print("handleUnengagedState: Wrong initial press ");
-        Serial.print(pressedButton);
-        Serial.print(" expected ");
-        Serial.println(sequence[0]);
+        // Wrong initial press - fail silently to avoid I2C interference
         slave.fail();
         currentState = UNENGAGED;
       }
@@ -153,8 +144,6 @@ void handleWaitingInputState() {
     // Check for button press
     for (int i = 0; i < 4; i++) {
       if (digitalRead(BUTTON_PINS[i]) == LOW) {
-        Serial.print("handleWaitingInputState: Button pressed: ");
-        Serial.println(i);
         buttonPressed = true;
         pressedButton = i;
         pressStartTime = millis();
@@ -166,55 +155,36 @@ void handleWaitingInputState() {
       }
     }
   } else {
-    // Check if button released
     if (digitalRead(BUTTON_PINS[pressedButton]) == HIGH) {
-      // Button released: turn off LED and buzzer
       digitalWrite(LED_PINS[pressedButton], LOW);
       noTone(SPEAKER_PIN);
       buttonPressed = false;
 
-      // Check if correct
       if (pressedButton == sequence[inputIndex]) {
-        Serial.print("handleWaitingInputState: Correct input ");
-        Serial.print(pressedButton);
-        Serial.print(" at index ");
-        Serial.println(inputIndex);
         inputIndex++;
         if (inputIndex == currentLength) {
-          // Completed current length
           if (currentLength == sequenceLength) {
-            // Sequence completed successfully
-            Serial.println("handleWaitingInputState: Full sequence completed - PASS");
             slave.pass();
           } else {
-            // Wait 4 seconds before showing next part
             lastCompletionTime = millis();
           }
         }
       } else {
-        // Incorrect: module failed
-        Serial.print("handleWaitingInputState: Wrong input ");
-        Serial.print(pressedButton);
-        Serial.print(" expected ");
-        Serial.println(sequence[inputIndex]);
         slave.fail();
       }
       pressedButton = -1;
     }
   }
   if (inputIndex == currentLength && currentLength < sequenceLength && millis() - lastCompletionTime >= WAIT_AFTER_COMPLETION) {
-    Serial.print("handleWaitingInputState: Advancing to length ");
-    Serial.println(currentLength + 1);
     currentLength++;
     currentState = SHOWING;
   }
   if (!userStartedGuessing && millis() - lastActionTime >= REPEAT_TIMEOUT) {
-    Serial.println("handleWaitingInputState: Timeout - repeating sequence");
     currentState = SHOWING;
   }
 }
 
-void setInitialState() {
+void resetState() {
   randomSeed(millis() + slave.getVersion());
   currentState = UNENGAGED;
   currentLength = 0;
@@ -239,15 +209,9 @@ void setup() {
     pinMode(BUTTON_PINS[i], INPUT_PULLUP);
   }
   pinMode(SPEAKER_PIN, OUTPUT);
-  Serial.begin(9600);
-    Serial1.begin(9600);
   slave.begin();
 }
 
 void loop() {
-  while (Serial1.available()) {
-        char c = Serial1.read();
-        Serial.write(c);
-    }
   slave.slaveLoop();
 }

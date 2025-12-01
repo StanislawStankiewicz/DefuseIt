@@ -6,12 +6,12 @@
 
 // Function prototypes
 void gameLoop();
-void setInitialState();
+void resetState();
 
-Slave module(0x10, gameLoop, setInitialState, LED_PIN);
+Slave module(0x10, gameLoop, resetState, LED_PIN);
 bool isSolved = false;
 
-void setInitialState() {
+void resetState() {
     isSolved = false;
 }
 

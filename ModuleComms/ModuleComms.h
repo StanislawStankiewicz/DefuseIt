@@ -12,12 +12,14 @@
 #define CMD_SET_VERSION 0x06
 #define CMD_IDENTIFY    0x07
 
-#define STATUS_UNSOLVED 0x00
-#define STATUS_PASSED   0x01
-#define STATUS_FAILED   0x02
+#define CMD_UNKNOWN    0xFF
+
+#define STATUS_UNSOLVED 0x01
+#define STATUS_PASSED   0x02
+#define STATUS_FAILED   0x03
 
 typedef void (*GameLoop)();
-typedef void (*SetInitialState)();
+typedef void (*ResetState)();
 
 class Master {
 public:
@@ -46,7 +48,7 @@ typedef void (*SlaveCallback)();
 
 class Slave {
 public:
-    Slave(uint8_t address, GameLoop loop, SetInitialState setState, uint8_t pin);
+    Slave(uint8_t address, GameLoop loop, ResetState setState, uint8_t pin);
     void begin();
     uint8_t getVersion();
     static void startGame();
@@ -65,7 +67,8 @@ private:
     static bool isGameActive;
 
     static GameLoop gameLoop;
-    static SetInitialState setInitialState;
+    static ResetState resetState;
+    static 
 
     static void receiveEvent(int numBytes);
     static void requestEvent();
