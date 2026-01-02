@@ -217,14 +217,12 @@ void handleSwitch() {
 }
 
 void handleButton() {
-  // Start game if button is pressed (keeping for backward compatibility)
   if (!isGameInProgress && digitalRead(BUTTON_PIN) == LOW) {
     startGame();
   }
 }
 
 void updateGameTimer() {
-  // Decrement remaining time every second
   if (millis() - lastTimerUpdate >= 1000 && remainingTime > 0) {
     remainingTime--;
     lastTimerUpdate = millis();
@@ -252,27 +250,22 @@ void handleBeeps() {
 }
 
 void handleMistakeBlinking() {
-  // Handle passive mistake blinking reminder
   if (blinkingActive) {
     unsigned long currentTime = millis();
     
     if (!isBlinking) {
-      // Not currently blinking, check if time for next blink
       if (currentTime - lastBlinkTime >= BLINK_INTERVAL) {
         if (currentBlink < mistakeCount && currentTime - lastBlinkEndTime >= BLINK_GAP) {
-          // Start next blink in sequence
           digitalWrite(RED_LED_PIN, HIGH);
           blinkStartTime = currentTime;
           isBlinking = true;
           currentBlink++;
         } else if (currentBlink >= mistakeCount) {
-          // Sequence complete, reset for next cycle
           currentBlink = 0;
           lastBlinkTime = currentTime;
         }
       }
     } else {
-      // Currently blinking, check if time to turn off
       if (currentTime - blinkStartTime >= BLINK_DURATION) {
         digitalWrite(RED_LED_PIN, LOW);
         isBlinking = false;
@@ -283,15 +276,12 @@ void handleMistakeBlinking() {
 }
 
 void handleFailure() {
-  // Handle failure state if active
   if (isHandlingFailure) {
     unsigned long currentTime = millis();
     if (currentTime - failureStartTime < BEEP_DURATION) {
-      // During the 0.5s beep and flash
       digitalWrite(RED_LED_PIN, HIGH);
       tone(BUZZER_PIN, 500, 50);  // Half the tone (500Hz instead of 1000Hz)
     } else {
-      // Penalty done, start passive blinking reminder
       Serial.print("Master: Restarting module ");
       Serial.println(failedModuleIndex);
       master.restartFailedModule(failedModuleIndex);
@@ -310,7 +300,6 @@ void handleFailure() {
 }
 
 void checkModules() {
-  // Check modules
   areAllModulesSolved = true;
   failedModuleIndex = -1;
   for (uint8_t i = 0; i < master.getModuleCount(); i++) {
@@ -326,7 +315,6 @@ void checkModules() {
 }
 
 void checkWinLose() {
-  // Win condition
   if (areAllModulesSolved) {
     Serial.println("Master: All modules solved! Sending END_GAME signal.");
     master.endGame();
@@ -336,7 +324,6 @@ void checkWinLose() {
     isGameEnded = true;
   }
 
-  // Lose condition
   if (remainingTime == 0 || mistakeCount >= maxMistakes) {
     Serial.println("Master: Game lost!");
     master.endGame();
@@ -351,11 +338,9 @@ void checkWinLose() {
     isGameEnded = true;
   }
 
-  // Handle module failure
   if (failedModuleIndex != -1 && !isHandlingFailure) {
     mistakeCount++;
     if (mistakeCount >= maxMistakes) {
-      // Final mistake - end game immediately without penalty
       Serial.println("Master: Game lost - too many mistakes!");
       master.endGame();
       digitalWrite(RED_LED_PIN, HIGH);
@@ -363,7 +348,6 @@ void checkWinLose() {
       isGameInProgress = false;
       isGameEnded = true;
     } else {
-      // Normal failure - apply penalty
       Serial.print("Master: Module failed! Mistake count: ");
       Serial.println(mistakeCount);
       isHandlingFailure = true;
@@ -376,13 +360,11 @@ void loop() {
   handleSwitch();
   handleButton();
 
-  // Check if game has ended and switch is off, then restart
   if (isGameEnded && !isSwitchOn) {
     resetGame();
     isGameEnded = false;
   }
 
-  // If the game is in progress, update timer, beep interval, check module statuses
   if (isGameInProgress) {
     updateGameTimer();
     handleBeeps();

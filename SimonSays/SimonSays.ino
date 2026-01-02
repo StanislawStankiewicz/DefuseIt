@@ -104,7 +104,6 @@ void handleButtonPressInUnengaged() {
         lastCompletionTime = millis();
         isWaiting = true;
       } else {
-        // Wrong initial press - fail silently to avoid I2C interference
         slave.fail();
         currentState = UNENGAGED;
       }
@@ -141,13 +140,11 @@ void handleShowingState() {
 
 void handleWaitingInputState() {
   if (!buttonPressed) {
-    // Check for button press
     for (int i = 0; i < 4; i++) {
       if (digitalRead(BUTTON_PINS[i]) == LOW) {
         buttonPressed = true;
         pressedButton = i;
         pressStartTime = millis();
-        // Turn on LED and buzzer
         digitalWrite(LED_PINS[i], HIGH);
         tone(SPEAKER_PIN, NOTES[i]);
         userStartedGuessing = true;

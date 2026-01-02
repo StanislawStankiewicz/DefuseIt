@@ -4,36 +4,29 @@
 #include "bitmaps.h"          // Your external file containing all bitmaps
 #include "ModuleComms.h"     // Module communications header
 
-// New command definition for reset
 #define CMD_RESET 0x07
 
-// Define color constants
 #define WHITE 1
 #define BLACK 0
 
-// Define display dimensions
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
-// SPI Pin definitions for the SH1106G
 #define OLED_CS    12  // Chip Select
 #define OLED_DC    11  // Data/Command
 #define OLED_RST   10  // Reset
 #define OLED_CLK    9  // Clock
 #define OLED_MOSI   8  // MOSI (Data In)
 
-// Create an instance of the display (using bit-banged SPI)
 Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT,
                          OLED_MOSI, OLED_CLK,
                          OLED_DC, OLED_RST, OLED_CS);
 
-// Button and victory pin definitions
 #define BTN_LEFT      2
 #define BTN_FORWARD   3
 #define BTN_RIGHT     4
 #define VICTORY_PIN   5
 
-// Labyrinth dimensions (change these to set any size, not just square)
 #define LABYRINTH_WIDTH  8
 #define LABYRINTH_HEIGHT 8
 
@@ -63,13 +56,9 @@ volatile bool gameRunning   = false; // Set to true when CMD_START_GAME is recei
 volatile bool gameCompleted = false; // Set to true when the player reaches the goal
 volatile bool resetRequested  = false; // Set to true when CMD_RESET is received
 
-// Create an instance of the Slave communications object
 #define SLAVE_ADDRESS 0x11
 Slave gameSlave(SLAVE_ADDRESS);
 
-//--------------------------------------------------
-// Game State Functions
-//--------------------------------------------------
 void resetGameState() {
   gameRunning = false;
   gameCompleted = false;
@@ -106,9 +95,6 @@ void completeGame() {
   gameSlave.setStatus(STATUS_PASSED);
 }
 
-//--------------------------------------------------
-// Labyrinth Functions
-//--------------------------------------------------
 void placeGoal() {
   do {
     goalX = random(1, LABYRINTH_WIDTH - 1);
@@ -226,9 +212,6 @@ void moveForward() {
 void turnLeft()  { playerDir = (playerDir + 3) % 4; }
 void turnRight() { playerDir = (playerDir + 1) % 4; }
 
-//--------------------------------------------------
-// Setup and Main Loop
-//--------------------------------------------------
 void setup() {
   Serial.begin(9600);
 

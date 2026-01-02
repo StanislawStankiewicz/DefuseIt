@@ -1,6 +1,7 @@
 #include <LiquidCrystal.h>
 #include "ModuleComms.h"
 
+// after a fail wait between 5 to 10 seconds while display ... animation
 
 const int rs = 11, en = 12, d4 = 13, d5 = A0, d6 = A1, d7 = A2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);

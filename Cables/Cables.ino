@@ -15,14 +15,12 @@ void setup() {
     pinMode(GREEN_LED, OUTPUT);
     pinMode(RED_LED, OUTPUT);
 
-    // Set input pins with pull-ups
     for (int i = 0; i < 8; i++) {
         pinMode(inputPins[i], INPUT_PULLUP);
     }
 
     randomSeed(analogRead(A1));
 
-    // Generate and display pattern once
     activePattern = random(1, 256);
     Serial.println(activePattern);
     digitalWrite(LATCH_PIN, LOW);
@@ -54,7 +52,6 @@ void loop() {
 }
 
 void shutdownAndFlash(int ledPin) {
-    // Turn off all outputs
     digitalWrite(LATCH_PIN, LOW);
     shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, 0);
     digitalWrite(LATCH_PIN, HIGH);
