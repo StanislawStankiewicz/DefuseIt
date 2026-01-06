@@ -4,28 +4,26 @@
 #include "bitmaps.h"          // Your external file containing all bitmaps
 #include "ModuleComms.h"     // Module communications header
 
-#define CMD_RESET 0x07
-
 #define WHITE 1
 #define BLACK 0
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
-#define OLED_CS    12  // Chip Select
-#define OLED_DC    11  // Data/Command
-#define OLED_RST   10  // Reset
-#define OLED_CLK    9  // Clock
-#define OLED_MOSI   8  // MOSI (Data In)
+#define OLED_CLK    13  // SCK
+#define OLED_RST    12  // RES
+#define OLED_MOSI   11  // SDA (MOSI)
+#define OLED_DC     10  // DC
+#define OLED_CS     9   // CS
 
 Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT,
                          OLED_MOSI, OLED_CLK,
                          OLED_DC, OLED_RST, OLED_CS);
 
-#define BTN_LEFT      2
-#define BTN_FORWARD   3
-#define BTN_RIGHT     4
-#define VICTORY_PIN   5
+#define BTN_LEFT      8
+#define BTN_FORWARD   7
+#define BTN_RIGHT     6
+#define VICTORY_PIN   2
 
 #define LABYRINTH_WIDTH  8
 #define LABYRINTH_HEIGHT 8
@@ -51,49 +49,22 @@ bool lastBtnLeft    = HIGH;
 bool lastBtnForward = HIGH;
 bool lastBtnRight   = HIGH;
 
-// Game state flags
-volatile bool gameRunning   = false; // Set to true when CMD_START_GAME is received
-volatile bool gameCompleted = false; // Set to true when the player reaches the goal
-volatile bool resetRequested  = false; // Set to true when CMD_RESET is received
+// Forward declarations
+void gameLoop();
+void resetGameState();
 
-#define SLAVE_ADDRESS 0x11
-Slave gameSlave(SLAVE_ADDRESS);
+#define SLAVE_ADDRESS 0x15
+Slave slave(SLAVE_ADDRESS, gameLoop, resetGameState, VICTORY_PIN);
 
 void resetGameState() {
-  gameRunning = false;
-  gameCompleted = false;
-  digitalWrite(VICTORY_PIN, LOW);
+  randomSeed(slave.getVersion());
   display.clearDisplay();
   display.display();
   placeGoal();
   placePlayer();
-}
-
-void startGameCallback() {
-  randomSeed(gameSlave.getVersion());
-  resetGameState();
-  gameRunning = true;
   renderView();
 }
 
-void endGameCallback() {
-  digitalWrite(VICTORY_PIN, LOW);
-}
-
-void processResetCommand() {
-  Serial.println("Reset command received.");
-  resetRequested = false;
-  resetGameState();
-}
-
-void completeGame() {
-  Serial.println("Game completed!");
-  gameCompleted = true;
-  display.clearDisplay();
-  display.display();
-  digitalWrite(VICTORY_PIN, HIGH);
-  gameSlave.setStatus(STATUS_PASSED);
-}
 
 void placeGoal() {
   do {
@@ -114,6 +85,10 @@ bool canMove(int x, int y) {
   return (x >= 0 && x < LABYRINTH_WIDTH &&
           y >= 0 && y < LABYRINTH_HEIGHT &&
           labyrinth[y][x] == 0);
+}
+
+void drawBitmap(const uint8_t *bitmap) {
+  display.drawBitmap(0, 0, bitmap, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
 }
 
 void renderView() {
@@ -152,43 +127,43 @@ void renderView() {
 
   // Left wall
   if (!canMove(leftX, leftY)) {
-    display.drawBitmap(0, 0, epd_bitmap_closed_left, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
+    drawBitmap(epd_bitmap_closed_left);
   } else {
-    display.drawBitmap(0, 0, epd_bitmap_open_left, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
+    drawBitmap(epd_bitmap_open_left);
   }
   // Right wall
   if (!canMove(rightX, rightY)) {
-    display.drawBitmap(0, 0, epd_bitmap_closed_right, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
+    drawBitmap(epd_bitmap_closed_right);
   } else {
-    display.drawBitmap(0, 0, epd_bitmap_open_right, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
+    drawBitmap(epd_bitmap_open_right);
   }
   // Front wall(s)
   if (!canMove(frontX, frontY)) {
-    display.drawBitmap(0, 0, epd_bitmap_closed_front, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
+    drawBitmap(epd_bitmap_closed_front);
   } else {
     if (!canMove(frontFarX, frontFarY)) {
-      display.drawBitmap(0, 0, epd_bitmap_closed_front_far, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
+      drawBitmap(epd_bitmap_closed_front_far);
     }
     if (!canMove(leftFarX, leftFarY)) {
-      display.drawBitmap(0, 0, epd_bitmap_closed_left_far, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
+      drawBitmap(epd_bitmap_closed_left_far);
     } else {
-      display.drawBitmap(0, 0, epd_bitmap_open_left_far, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
+      drawBitmap(epd_bitmap_open_left_far);
     }
     if (!canMove(rightFarX, rightFarY)) {
-      display.drawBitmap(0, 0, epd_bitmap_closed_right_far, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
+      drawBitmap(epd_bitmap_closed_right_far);
     } else {
-      display.drawBitmap(0, 0, epd_bitmap_open_right_far, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
+      drawBitmap(epd_bitmap_open_right_far);
     }
   }
   if (goalX == frontX && goalY == frontY) {
-    display.drawBitmap(0, 0, epd_bitmap_hole, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
+    drawBitmap(epd_bitmap_hole);
   } else if (goalX == frontFarX && goalY == frontFarY) {
-    display.drawBitmap(0, 0, epd_bitmap_hole_far, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
+    drawBitmap(epd_bitmap_hole_far);
   }
   display.display();
 }
 
-void moveForward() {
+bool moveForward() {
   int nextX = playerX;
   int nextY = playerY;
 
@@ -205,73 +180,79 @@ void moveForward() {
   }
 
   if (playerX == goalX && playerY == goalY) {
-    completeGame();
+    slave.pass();
+    return true;
   }
+  return false;
 }
 
-void turnLeft()  { playerDir = (playerDir + 3) % 4; }
-void turnRight() { playerDir = (playerDir + 1) % 4; }
+void turnLeft()  { 
+  playerDir = (playerDir + 3) % 4; 
+}
+void turnRight() { 
+  playerDir = (playerDir + 1) % 4; 
+}
 
 void setup() {
   Serial.begin(9600);
+  delay(2000);
+  Serial.println("Setup started...");
 
   pinMode(BTN_LEFT,    INPUT_PULLUP);
   pinMode(BTN_FORWARD, INPUT_PULLUP);
   pinMode(BTN_RIGHT,   INPUT_PULLUP);
-  pinMode(VICTORY_PIN, OUTPUT);
-  digitalWrite(VICTORY_PIN, LOW);
 
+  Serial.println("Initializing display...");
   if (!display.begin(SPI_MODE0, 0x3C)) {
     Serial.println(F("Failed to initialize SH1106G display!"));
     while (true);
   }
-  display.clearDisplay();
-  display.display();
-  display.setTextColor(WHITE);
+  Serial.println("Display initialized.");
 
-  gameSlave.begin();
-  gameSlave.onGameStart(startGameCallback);
-  gameSlave.onGameEnd(endGameCallback);
-  Serial.println("Init completed.");
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(10, 20);
+  display.println("Labyrinth Module");
+  display.setCursor(10, 35);
+  display.println("Waiting for Master...");
+  display.drawRect(0, 0, 128, 64, WHITE);
+  display.display();
+
+  slave.begin();
+  Serial.println("Init completed. Waiting for I2C commands...");
+}
+
+void gameLoop() {
+  bool btnLeft    = digitalRead(BTN_LEFT);
+  bool btnForward = digitalRead(BTN_FORWARD);
+  bool btnRight   = digitalRead(BTN_RIGHT);
+
+  if (!btnForward && lastBtnForward) {
+    if (moveForward()) {
+      display.clearDisplay();
+      display.display();
+      return;
+    }
+    renderView();
+    delay(200);
+  }
+  if (!btnLeft && lastBtnLeft) {
+    turnLeft();
+    renderView();
+    delay(200);
+  }
+  if (!btnRight && lastBtnRight) {
+    turnRight();
+    renderView();
+    delay(200);
+  }
+
+  lastBtnLeft    = btnLeft;
+  lastBtnForward = btnForward;
+  lastBtnRight   = btnRight;
 }
 
 void loop() {
-  if (resetRequested) {
-    processResetCommand();
-  }
-
-  if (gameRunning && !gameCompleted) {
-    bool btnLeft    = digitalRead(BTN_LEFT);
-    bool btnForward = digitalRead(BTN_FORWARD);
-    bool btnRight   = digitalRead(BTN_RIGHT);
-
-    if (!btnForward && lastBtnForward) {
-      moveForward();
-      if (gameCompleted) {
-        return;
-      }
-      renderView();
-      delay(200);
-    }
-    if (!btnLeft && lastBtnLeft) {
-      turnLeft();
-      if (gameCompleted) {
-        return;
-      }
-      renderView();
-      delay(200);
-    }
-    if (!btnRight && lastBtnRight) {
-      turnRight();
-      if (gameCompleted) {
-        return;
-      }
-      renderView();
-      delay(200);
-    }
-
-    lastBtnLeft    = btnLeft;
-    lastBtnForward = btnForward;
-    lastBtnRight   = btnRight;
-  }
+  slave.slaveLoop();
 }
