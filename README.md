@@ -8,10 +8,7 @@ Arduino-based multi-module bomb-defusal game. A single master controller discove
 | --- | --- |
 | `Master/` | Main controller that discovers modules, displays timer/version, drives buzzer/LEDs, and orchestrates start/end commands. |
 | `ModuleComms/` | Shared library that wraps I²C Master/Slave communication (command opcodes, status codes, and helper classes). |
-| `Keypad/` | Binary/Math keypad module using an LCD and 4×4 keypad. Implements `Slave` callbacks for puzzles. |
-| `KeypadTester/` | Stand-alone sketch to validate keypad wiring. Serial-only logging; helpful during perfboard bring-up. |
-| `Symbols/`, `SimonSays/`, `Cables/`, etc. | Additional module sketches (some still prototypes / TBD). |
-| `Symbols/mux_test/` | SoftwareWire-based tester for the TCA9548A multiplexer + multiple OLEDs. |
+| `Keypad/` , `Symbols/`, `SimonSays/`, `Cables/`, etc. | Concrete module implementations. |
 
 ### Module Bus (ModuleComms)
 
