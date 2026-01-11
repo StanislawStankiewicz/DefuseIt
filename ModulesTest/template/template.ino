@@ -1,8 +1,8 @@
 #include <Wire.h>
 #include "ModuleComms.h"
 
-#define BUTTON_PIN 2
-#define LED_PIN 3
+#define BUTTON_PIN 3
+#define LED_PIN 2
 
 Slave module(0x10, loop, resetState, LED_PIN);
 

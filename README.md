@@ -29,7 +29,6 @@ Each module exports the same edge connector pinout:
 - `GND`
 - `SDA`
 - `SCL`
-- `INT` (optional, typically tied to a solved indicator LED)
 
 Keep bus cables short; add 4.7 kΩ pull-ups to SDA/SCL if the master backplane does not provide them.
 

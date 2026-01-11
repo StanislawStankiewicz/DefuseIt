@@ -49,6 +49,9 @@ bool lastBtnLeft    = HIGH;
 bool lastBtnForward = HIGH;
 bool lastBtnRight   = HIGH;
 
+unsigned long lastInputTime = 0;
+const unsigned long INPUT_DELAY = 200;
+
 // Forward declarations
 void gameLoop();
 void resetGameState();
@@ -57,7 +60,7 @@ void resetGameState();
 Slave slave(SLAVE_ADDRESS, gameLoop, resetGameState, VICTORY_PIN);
 
 void resetGameState() {
-  randomSeed(slave.getVersion());
+  randomSeed(millis() + slave.getVersion());
   display.clearDisplay();
   display.display();
   placeGoal();
@@ -196,56 +199,49 @@ void turnRight() {
 void setup() {
   Serial.begin(9600);
   delay(2000);
-  Serial.println("Setup started...");
 
   pinMode(BTN_LEFT,    INPUT_PULLUP);
   pinMode(BTN_FORWARD, INPUT_PULLUP);
   pinMode(BTN_RIGHT,   INPUT_PULLUP);
 
-  Serial.println("Initializing display...");
   if (!display.begin(SPI_MODE0, 0x3C)) {
     Serial.println(F("Failed to initialize SH1106G display!"));
     while (true);
   }
   Serial.println("Display initialized.");
-
   display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(10, 20);
-  display.println("Labyrinth Module");
-  display.setCursor(10, 35);
-  display.println("Waiting for Master...");
-  display.drawRect(0, 0, 128, 64, WHITE);
-  display.display();
 
   slave.begin();
-  Serial.println("Init completed. Waiting for I2C commands...");
+  Serial.println("Init completed.");
 }
 
 void gameLoop() {
   bool btnLeft    = digitalRead(BTN_LEFT);
   bool btnForward = digitalRead(BTN_FORWARD);
   bool btnRight   = digitalRead(BTN_RIGHT);
+  
+  unsigned long currentMillis = millis();
 
-  if (!btnForward && lastBtnForward) {
-    if (moveForward()) {
-      display.clearDisplay();
-      display.display();
-      return;
+  if (currentMillis - lastInputTime >= INPUT_DELAY) {
+    if (!btnForward && lastBtnForward) {
+      lastInputTime = currentMillis;
+      if (moveForward()) {
+        display.clearDisplay();
+        display.display();
+        return;
+      }
+      renderView();
     }
-    renderView();
-    delay(200);
-  }
-  if (!btnLeft && lastBtnLeft) {
-    turnLeft();
-    renderView();
-    delay(200);
-  }
-  if (!btnRight && lastBtnRight) {
-    turnRight();
-    renderView();
-    delay(200);
+    else if (!btnLeft && lastBtnLeft) {
+      lastInputTime = currentMillis;
+      turnLeft();
+      renderView();
+    }
+    else if (!btnRight && lastBtnRight) {
+      lastInputTime = currentMillis;
+      turnRight();
+      renderView();
+    }
   }
 
   lastBtnLeft    = btnLeft;
