@@ -14,6 +14,14 @@ void Master::sendVersion(uint8_t index) {
     Wire.endTransmission();
 }
 
+void Master::sendRemainingSeconds(uint8_t moduleAddress, uint16_t remainingSeconds) {
+    Wire.beginTransmission(moduleAddress);
+    Wire.write(CMD_SET_REMAINING_SECONDS);
+    Wire.write((remainingSeconds >> 8) & 0xFF);
+    Wire.write(remainingSeconds & 0xFF);
+    Wire.endTransmission();
+}
+
 void Master::discoverModules() {
     moduleCount = 0;
 
@@ -98,6 +106,7 @@ void Master::sendCommand(uint8_t moduleAddress, uint8_t command) {
 uint8_t Slave::moduleAddress = 0;
 uint8_t Slave::status = STATUS_UNSOLVED;
 uint8_t Slave::masterVersion = 0;
+uint16_t Slave::remainingSeconds = 0;
 uint8_t Slave::command = 0;
 uint8_t Slave::mistakes = 0;
 uint8_t Slave::led_pin;
@@ -122,6 +131,10 @@ void Slave::begin() {
 
 uint8_t Slave::getVersion() {
     return masterVersion;
+}
+
+uint16_t Slave::getRemainingSeconds() {
+    return remainingSeconds;
 }
 
 void Slave::startGame() {
@@ -178,6 +191,14 @@ void Slave::receiveEvent(int numBytes) {
         case CMD_SET_STATUS:
             if (Wire.available() >= 1) {
                 status = Wire.read();
+            }
+            break;
+
+        case CMD_SET_REMAINING_SECONDS:
+            if (Wire.available() >= 2) {
+                uint8_t highByte = Wire.read();
+                uint8_t lowByte = Wire.read();
+                remainingSeconds = (uint16_t(highByte) << 8) | lowByte;
             }
             break;
 

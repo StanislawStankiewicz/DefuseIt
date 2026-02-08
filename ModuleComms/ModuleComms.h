@@ -11,6 +11,7 @@
 #define CMD_GET_VERSION 0x05
 #define CMD_SET_VERSION 0x06
 #define CMD_IDENTIFY    0x07
+#define CMD_SET_REMAINING_SECONDS 0x08
 
 #define CMD_UNKNOWN    0xFF
 
@@ -32,6 +33,7 @@ public:
     uint8_t getModuleStatus(uint8_t index);
     void setModuleStatus(uint8_t index, uint8_t status);
     void sendVersion(uint8_t index);
+    void sendRemainingSeconds(uint8_t moduleAddress, uint16_t remainingSeconds);
     uint8_t getVersion() const;
     void setVersion(uint8_t newVersion);
     uint8_t getModuleCount() const;
@@ -51,6 +53,7 @@ public:
     Slave(uint8_t address, GameLoop loop, ResetState setState, uint8_t pin);
     void begin();
     uint8_t getVersion();
+    uint16_t getRemainingSeconds();
     static void startGame();
     void slaveLoop();
     void pass();
@@ -61,6 +64,7 @@ private:
     static uint8_t moduleAddress;
     static uint8_t status;
     static uint8_t masterVersion;
+    static uint16_t remainingSeconds;
     static uint8_t mistakes;
     static uint8_t command;
     static uint8_t led_pin;

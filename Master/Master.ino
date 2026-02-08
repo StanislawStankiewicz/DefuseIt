@@ -46,6 +46,9 @@ const int BLINK_GAP = 300;                        // 300ms gap between blinks
 Master master(0);
 TM1637Display timerDisplay(DISPLAY_CLK, DISPLAY_DIO);
 
+const uint8_t timeSyncModules[] = {0x12};
+const uint8_t timeSyncModuleCount = sizeof(timeSyncModules) / sizeof(timeSyncModules[0]);
+
 bool isGameInProgress = false;
 bool areAllModulesSolved = false;
 int remainingTime = gameDurationSeconds;
@@ -126,6 +129,12 @@ void displayTime(int secondsLeft) {
   timerDisplay.showNumberDecEx(displayValue, 0x40, true);
 }
 
+void updateTimeSyncModules(int secondsLeft) {
+  for (uint8_t i = 0; i < timeSyncModuleCount; i++) {
+    master.sendRemainingSeconds(timeSyncModules[i], (uint16_t)secondsLeft);
+  }
+}
+
 void displayVersion(int val) {
   if (val < 0)   val = 0;
   if (val > 99)  val = 99;
@@ -158,6 +167,7 @@ void startGame() {
   lastTimerUpdate = millis();
   lastBeepTime = millis();
   beepInterval = initialInterval;
+  updateTimeSyncModules(remainingTime);
   beep();
   delay(500);
 }
@@ -227,6 +237,7 @@ void updateGameTimer() {
     remainingTime--;
     lastTimerUpdate = millis();
     displayTime(remainingTime);
+    updateTimeSyncModules(remainingTime);
   }
 }
 
