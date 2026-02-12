@@ -7,40 +7,67 @@ const uint8_t RGB_PIN_G = 10;
 const uint8_t RGB_PIN_B = 11;
 const uint8_t SOLVED_LED_PIN = 2;
 
-const unsigned long FAST_WINDOW_MS = 900;
-const unsigned long HOLD_DURATION_MS = 1800;
-const unsigned long HOLD_RELEASE_GRACE_MS = 120;
+const unsigned long CLICK_WINDOW_MS = 1000;
 
-enum ActionType { ACTION_TOGGLE_FAST, ACTION_HOLD_LONG };
+enum ActionType { ACTION_CLICK, ACTION_HOLD };
+enum ColorId { COLOR_RED, COLOR_BLUE, COLOR_GREEN, COLOR_YELLOW, COLOR_WHITE, COLOR_PURPLE };
 
-struct Challenge {
+struct ColorDef {
 	const char *name;
 	uint8_t r;
 	uint8_t g;
 	uint8_t b;
-	ActionType action;
 };
 
-const Challenge CHALLENGES[] = {
-	{"RED",    255,   0,   0, ACTION_TOGGLE_FAST},
-	{"BLUE",     0,   0, 255, ACTION_TOGGLE_FAST},
-	{"GREEN",    0, 255,   0, ACTION_HOLD_LONG},
-	{"YELLOW", 255, 120,   0, ACTION_HOLD_LONG}
+const ColorDef COLORS[] = {
+	{"RED",    255,   0,   0},
+	{"BLUE",     0,   0, 255},
+	{"GREEN",    0, 255,   0},
+	{"YELLOW", 255, 120,   0},
+	{"WHITE",  255, 255, 255},
+	{"PURPLE", 180,   0, 255}
 };
-const uint8_t CHALLENGE_COUNT = sizeof(CHALLENGES) / sizeof(CHALLENGES[0]);
+const uint8_t COLOR_COUNT = sizeof(COLORS) / sizeof(COLORS[0]);
+
+const ColorId INITIAL_COLOR_POOL[] = {
+	COLOR_RED,
+	COLOR_BLUE,
+	COLOR_GREEN,
+	COLOR_YELLOW,
+	COLOR_WHITE,
+	COLOR_PURPLE
+};
+const uint8_t INITIAL_COLOR_COUNT = sizeof(INITIAL_COLOR_POOL) / sizeof(INITIAL_COLOR_POOL[0]);
+
+const ColorId RELEASE_COLOR_POOL[] = {
+	COLOR_BLUE,
+	COLOR_WHITE,
+	COLOR_YELLOW,
+	COLOR_PURPLE,
+	COLOR_RED
+};
+const uint8_t RELEASE_COLOR_COUNT = sizeof(RELEASE_COLOR_POOL) / sizeof(RELEASE_COLOR_POOL[0]);
 
 bool challengeArmed = false;
-const Challenge *activeChallenge = nullptr;
+ColorId initialColor = COLOR_RED;
+ActionType activeAction = ACTION_HOLD;
+ColorId releaseColor = COLOR_BLUE;
+uint8_t releaseDigit = 8;
 int initialSwitchState = HIGH;
-unsigned long firstToggleTime = 0;
-unsigned long holdStartTime = 0;
+unsigned long interactionStartTime = 0;
+bool holdStripActive = false;
 
 void gameLoop();
 void resetState();
 void armChallenge();
-void processToggleFast(int currentState);
-void processHoldLong(int currentState);
+void processClick(int currentState);
+void processHold(int currentState);
+ActionType determineAction(ColorId color, uint8_t version);
+ColorId pickReleaseColor();
+uint8_t digitForReleaseColor(ColorId color);
+uint8_t getLastTimerDigit();
 void setColor(uint8_t r, uint8_t g, uint8_t b);
+void setColorById(ColorId color);
 
 Slave slave(SLAVE_ADDRESS, gameLoop, resetState, SOLVED_LED_PIN);
 
@@ -67,48 +94,57 @@ void gameLoop() {
 
 	int currentState = digitalRead(SWITCH_PIN);
 
-	if (activeChallenge->action == ACTION_TOGGLE_FAST) {
-		processToggleFast(currentState);
+	if (activeAction == ACTION_CLICK) {
+		processClick(currentState);
 	} else {
-		processHoldLong(currentState);
+		processHold(currentState);
 	}
 }
 
 void resetState() {
 	challengeArmed = false;
-	activeChallenge = nullptr;
-	firstToggleTime = 0;
-	holdStartTime = 0;
+	interactionStartTime = 0;
+	holdStripActive = false;
+	activeAction = ACTION_HOLD;
+	releaseColor = COLOR_BLUE;
+	releaseDigit = 8;
 	initialSwitchState = digitalRead(SWITCH_PIN);
 	setColor(0, 0, 0);
 }
 
 void armChallenge() {
-	uint8_t seed = slave.getVersion();
-	randomSeed((millis() << 4) ^ seed);
-	uint8_t index = random(CHALLENGE_COUNT);
-	activeChallenge = &CHALLENGES[index];
-	setColor(activeChallenge->r, activeChallenge->g, activeChallenge->b);
+	uint8_t version = slave.getVersion();
+	randomSeed((millis() << 4) ^ version ^ (slave.getRemainingSeconds() << 1));
+	initialColor = INITIAL_COLOR_POOL[random(INITIAL_COLOR_COUNT)];
+	activeAction = determineAction(initialColor, version);
+	setColorById(initialColor);
 	initialSwitchState = digitalRead(SWITCH_PIN);
-	firstToggleTime = 0;
-	holdStartTime = 0;
+	interactionStartTime = 0;
+	holdStripActive = false;
+	releaseColor = COLOR_BLUE;
+	releaseDigit = 8;
 	challengeArmed = true;
-	Serial.print("Switch challenge: ");
-	Serial.println(activeChallenge->name);
+
+	Serial.print("Switch color: ");
+	Serial.print(COLORS[initialColor].name);
+	Serial.print(" | version: ");
+	Serial.print(version);
+	Serial.print(" | action: ");
+	Serial.println(activeAction == ACTION_CLICK ? "CLICK" : "HOLD");
 }
 
-void processToggleFast(int currentState) {
+void processClick(int currentState) {
 	unsigned long now = millis();
 
-	if (firstToggleTime == 0) {
+	if (interactionStartTime == 0) {
 		if (currentState != initialSwitchState) {
-			firstToggleTime = now;
+			interactionStartTime = now;
 		}
 		return;
 	}
 
 	if (currentState == initialSwitchState) {
-		if (now - firstToggleTime <= FAST_WINDOW_MS) {
+		if (now - interactionStartTime < CLICK_WINDOW_MS) {
 			slave.pass();
 		} else {
 			slave.fail();
@@ -116,36 +152,90 @@ void processToggleFast(int currentState) {
 		return;
 	}
 
-	if (now - firstToggleTime > FAST_WINDOW_MS) {
+	if (now - interactionStartTime >= CLICK_WINDOW_MS) {
 		slave.fail();
 	}
 }
 
-void processHoldLong(int currentState) {
-	unsigned long now = millis();
-	bool isActive = (currentState == LOW);
 
-	if (!isActive) {
-		if (holdStartTime == 0) {
-			return;
-		}
+void processHold(int currentState) {
+	bool isPressed = (currentState == LOW);
 
-		unsigned long heldFor = now - holdStartTime;
-		if (heldFor >= HOLD_DURATION_MS) {
-			slave.pass();
-		} else if (heldFor > HOLD_RELEASE_GRACE_MS) {
-			slave.fail();
-		} else {
-			holdStartTime = 0;
+	if (!holdStripActive) {
+		if (isPressed) {
+			holdStripActive = true;
+			interactionStartTime = millis();
+			releaseColor = pickReleaseColor();
+			releaseDigit = digitForReleaseColor(releaseColor);
+			setColorById(releaseColor);
+
+			Serial.print("Release color: ");
+			Serial.print(COLORS[releaseColor].name);
+			Serial.print(" | target digit: ");
+			Serial.println(releaseDigit);
 		}
 		return;
 	}
 
-	if (holdStartTime == 0) {
-		holdStartTime = now;
-	} else if (now - holdStartTime >= HOLD_DURATION_MS) {
-		slave.pass();
+	if (isPressed) {
+		return;
 	}
+
+	uint8_t timerDigit = getLastTimerDigit();
+	if (timerDigit == releaseDigit) {
+		slave.pass();
+	} else {
+		slave.fail();
+	}
+}
+
+ActionType determineAction(ColorId color, uint8_t version) {
+	if (color == COLOR_GREEN) {
+		return ACTION_CLICK;
+	}
+
+	if ((color == COLOR_RED || color == COLOR_BLUE) && (version % 2 == 0)) {
+		return ACTION_CLICK;
+	}
+
+	if ((color == COLOR_BLUE || color == COLOR_YELLOW) && (version % 3 == 0)) {
+		return ACTION_HOLD;
+	}
+
+	if (color == COLOR_YELLOW && (version % 2 == 0) && (version % 3 == 0)) {
+		return ACTION_CLICK;
+	}
+
+	return ACTION_HOLD;
+}
+
+ColorId pickReleaseColor() {
+	return RELEASE_COLOR_POOL[random(RELEASE_COLOR_COUNT)];
+}
+
+uint8_t digitForReleaseColor(ColorId color) {
+	if (color == COLOR_BLUE) {
+		return 4;
+	}
+	if (color == COLOR_WHITE) {
+		return 1;
+	}
+	if (color == COLOR_YELLOW) {
+		return 5;
+	}
+	if (color == COLOR_PURPLE) {
+		return 0;
+	}
+	return 8;
+}
+
+uint8_t getLastTimerDigit() {
+	uint16_t remainingSeconds = slave.getRemainingSeconds();
+	return remainingSeconds % 10;
+}
+
+void setColorById(ColorId color) {
+	setColor(COLORS[color].r, COLORS[color].g, COLORS[color].b);
 }
 
 void setColor(uint8_t r, uint8_t g, uint8_t b) {

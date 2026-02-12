@@ -46,7 +46,7 @@ const int BLINK_GAP = 300;                        // 300ms gap between blinks
 Master master(0);
 TM1637Display timerDisplay(DISPLAY_CLK, DISPLAY_DIO);
 
-const uint8_t timeSyncModules[] = {0x12};
+const uint8_t timeSyncModules[] = {0x14};
 const uint8_t timeSyncModuleCount = sizeof(timeSyncModules) / sizeof(timeSyncModules[0]);
 
 bool isGameInProgress = false;
