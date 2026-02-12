@@ -8,7 +8,7 @@
 void gameLoop();
 void resetState();
 
-Slave module(0x10, gameLoop, resetState, LED_PIN);
+Slave slave(0x10, gameLoop, resetState, LED_PIN);
 bool isSolved = false;
 
 void resetState() {
@@ -23,13 +23,13 @@ void setup() {
     pinMode(9, OUTPUT);
     digitalWrite(9, HIGH);
     
-    module.begin();
+    slave.begin();
 }
 
 void gameLoop() {
     if (!isSolved && digitalRead(BUTTON_PIN) == LOW) {
         Serial.println("Slave 1: Solved!");
-        module.pass();
+        slave.pass();
         isSolved = true;
     }
 }
@@ -42,5 +42,5 @@ void loop() {
     }
 
     // Handle I2C slave functionality
-    module.slaveLoop();
+    slave.slaveLoop();
 }

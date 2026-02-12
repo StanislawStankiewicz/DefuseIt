@@ -13,7 +13,7 @@ bool pendingAutoPass = false;
 void gameLoop();
 void resetState();
 
-Slave module(SLAVE_ADDRESS, gameLoop, resetState, MODULE_SOLVED_PIN);
+Slave slave(SLAVE_ADDRESS, gameLoop, resetState, MODULE_SOLVED_PIN);
 
 void resetState() {
 	gameStartTime = millis();
@@ -34,7 +34,7 @@ void gameLoop() {
 	if (pendingAutoPass && (millis() - gameStartTime >= AUTO_PASS_DELAY_MS)) {
 		Serial.println("Debug: auto-pass delay reached, passing module");
 		pendingAutoPass = false;
-		module.pass();
+		slave.pass();
 	}
 }
 
@@ -54,11 +54,11 @@ void setup() {
 	Serial.print("Debug: random check (setup) = ");
 	Serial.println(randCheck);
 
-	module.begin();
+	slave.begin();
 	Serial.print("Debug: ModuleComms slave started at address 0x");
 	Serial.println(SLAVE_ADDRESS, HEX);
 }
 
 void loop() {
-	module.slaveLoop();
+	slave.slaveLoop();
 }

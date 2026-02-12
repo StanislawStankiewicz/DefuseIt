@@ -18,7 +18,7 @@ const uint8_t buttonPins[CHANNEL_COUNT] = {A0, A1, A2, A3, A4, A5};
 
 #define LED_PIN 13
 
-Slave module(SLAVE_ADDRESS, gameLoop, resetState, LED_PIN);
+Slave slave(SLAVE_ADDRESS, gameLoop, resetState, LED_PIN);
 
 volatile bool startPending = false;
 bool displaysInitialized = false;
@@ -73,7 +73,7 @@ void resetState() {
 
 void gameLoop() {
     if (startPending && !displaysInitialized) {
-        randomSeed(module.getVersion());
+        randomSeed(slave.getVersion());
         targetScreen = (uint8_t)random(1, CHANNEL_COUNT + 1); // 1..CHANNEL_COUNT
 
         for (uint8_t ch = 1; ch <= CHANNEL_COUNT; ++ch) {
@@ -90,8 +90,8 @@ void gameLoop() {
         bool state = digitalRead(buttonPins[i]); // HIGH when released
         if (lastButtonState[i] == HIGH && state == LOW) {
             uint8_t pressedScreen = i + 1; // human-friendly 1-based index
-            if (pressedScreen == targetScreen) module.pass();
-            else module.fail();
+            if (pressedScreen == targetScreen) slave.pass();
+            else slave.fail();
             return;
         }
         lastButtonState[i] = state;
@@ -100,9 +100,9 @@ void gameLoop() {
 
 void setup() {
     Wire.begin();
-    module.begin();
+    slave.begin();
 }
 
 void loop() {
-    module.slaveLoop();
+    slave.slaveLoop();
 }

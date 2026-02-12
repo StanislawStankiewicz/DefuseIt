@@ -60,7 +60,10 @@ void resetGameState();
 Slave slave(SLAVE_ADDRESS, gameLoop, resetGameState, VICTORY_PIN);
 
 void resetGameState() {
-  randomSeed(millis() + slave.getVersion());
+  unsigned long seed = millis() + slave.getVersion();
+  randomSeed(seed);
+  Serial.print("[Labyrinth] RNG seed: ");
+  Serial.println(seed);
   display.clearDisplay();
   display.display();
   placeGoal();
@@ -74,20 +77,32 @@ void placeGoal() {
     goalX = random(1, LABYRINTH_WIDTH - 1);
     goalY = random(1, LABYRINTH_HEIGHT - 1);
   } while (labyrinth[goalY][goalX] == 1);
+  Serial.print("[Labyrinth] Goal placed at: ");
+  Serial.print(goalX);
+  Serial.print(",");
+  Serial.println(goalY);
 }
 
 void placePlayer() {
   do {
     playerX = random(1, LABYRINTH_WIDTH - 1);
     playerY = random(1, LABYRINTH_HEIGHT - 1);
-  } while (labyrinth[playerY][playerX] == 1);
-  playerDir = random(0, 4);  // Random direction between 0 and 3
+  } while (labyrinth[playerY][playerX] == 1 || (playerX == goalX && playerY == goalY));
+  
+  playerDir = random(0, 4);
+  Serial.print("[Labyrinth] Player placed at: ");
+  Serial.print(playerX);
+  Serial.print(",");
+  Serial.print(playerY);
+  Serial.print(" dir=");
+  Serial.println(playerDir);
 }
 
 bool canMove(int x, int y) {
-  return (x >= 0 && x < LABYRINTH_WIDTH &&
-          y >= 0 && y < LABYRINTH_HEIGHT &&
-          labyrinth[y][x] == 0);
+  if (x < 0 || x >= LABYRINTH_WIDTH || y < 0 || y >= LABYRINTH_HEIGHT) {
+    return false; 
+  }
+  return (labyrinth[y][x] == 0);
 }
 
 void drawBitmap(const uint8_t *bitmap) {
@@ -210,7 +225,7 @@ void setup() {
   }
   Serial.println("Display initialized.");
   display.clearDisplay();
-
+  // TODO: fix noise on startup
   slave.begin();
   Serial.println("Init completed.");
 }

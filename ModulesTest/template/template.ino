@@ -4,7 +4,7 @@
 #define BUTTON_PIN 3
 #define LED_PIN 2
 
-Slave module(0x10, loop, resetState, LED_PIN);
+Slave slave(0x10, loop, resetState, LED_PIN);
 
 void resetState() {
     pinMode(BUTTON_PIN, INPUT_PULLUP);
@@ -12,15 +12,15 @@ void resetState() {
 }
 
 void setup() {
-    module.begin();
+    slave.begin();
 }
 
 void loop() {
-    module.slaveLoop();
+    slave.slaveLoop();
 }
 
 void game_loop() {
   if (igitalRead(BUTTON_PIN) == LOW) {
-      module.
+      slave.
     }
 }

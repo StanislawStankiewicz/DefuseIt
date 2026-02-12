@@ -95,7 +95,7 @@ void updateDisplay();
 
 // Module Communication
 #define SLAVE_ADDRESS 0x16
-Slave module(SLAVE_ADDRESS, gameLoop, resetState, LED_PIN);
+Slave slave(SLAVE_ADDRESS, gameLoop, resetState, LED_PIN);
 
 void setup() {
     Serial.begin(9600);
@@ -118,14 +118,14 @@ void setup() {
     display.display();
     
     // Module Comms
-    module.begin();
+    slave.begin();
     
     // Initialize random seed (using analog pin not connected)
     Serial.println("Setup Complete!");
 }
 
 void loop() {
-    module.slaveLoop();
+    slave.slaveLoop();
 }
 
 void resetState() {
@@ -177,9 +177,9 @@ void handleButton() {
     if ((millis() - lastDebounceTime) > debounceDelay) {
         if (reading == LOW) { // Pressed
              if (currentFreq == targets[targetIndex].freq) {
-                 module.pass();
+                 slave.pass();
              } else {
-                 module.fail();
+                 slave.fail();
              }
              delay(200); 
         }
@@ -244,16 +244,19 @@ void handleMorseCode() {
 
 
 void updateDisplay() {
-    display.clearDisplay();
+    // 1. Clear only the specific area of the frequency (x, y, width, height)
+    // Adjust 10, 20, 100, 20 to match your text position and size
+    display.fillRect(10, 20, 110, 16, SH110X_BLACK); 
+
+    // 2. Set cursor and draw the new number
     display.setTextSize(2);
     display.setTextColor(SH110X_WHITE);
     display.setCursor(10, 20);
     
-    // Format: 3.505 MHz
     display.print(currentFreq / 1000);
     display.print(".");
     
-    int decimal = currentFreq % 1000; // e.g., 505
+    int decimal = currentFreq % 1000;
     if (decimal < 100) display.print("0");
     if (decimal < 10) display.print("0");
     display.print(decimal);
@@ -261,5 +264,7 @@ void updateDisplay() {
     display.setTextSize(1);
     display.print(" MHz");
     
-    display.display();
+    // 3. Still required, but much faster if only specific pixels changed 
+    // in the buffer before sending.
+    display.display(); 
 }

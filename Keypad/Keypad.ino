@@ -29,7 +29,7 @@ int mistakesLeft;
 const uint8_t SLAVE_ADDRESS = 0x12;
 void gameLoop();
 void resetState();
-Slave module(SLAVE_ADDRESS, gameLoop, resetState, moduleSolvedPin);
+Slave slave(SLAVE_ADDRESS, gameLoop, resetState, moduleSolvedPin);
 
 bool updateDisplay = false;
 String lastBinary = "";
@@ -141,20 +141,20 @@ char scanKeypad() {
 void checkModuleState() {
   if (puzzlesSolved >= requiredPuzzles) {
     Serial.println("Module solved");
-    module.pass();
+    slave.pass();
     return;
   }
 
   if (mistakesLeft <= 0) {
     Serial.println("Module failed");
-    module.fail();
+    slave.fail();
   }
 }
 
 void resetState() {
-  currentMode = selectMode(module.getVersion());
+  currentMode = selectMode(slave.getVersion());
   generateEquation();
-  randomSeed(millis() + module.getVersion());
+  randomSeed(millis() + slave.getVersion());
   lcd.clear();
 }
 
@@ -185,7 +185,7 @@ void gameLoop() {
         puzzlesSolved++;
         if (puzzlesSolved >= requiredPuzzles) {
           Serial.println("Module solved");
-          module.pass();
+          slave.pass();
         } else {
           generateEquation();
         }
@@ -193,7 +193,7 @@ void gameLoop() {
         mistakesLeft--;
         if (mistakesLeft <= 0) {
           Serial.println("Module failed");
-          module.fail();
+          slave.fail();
         } else {
           Serial.print("Incorrect. Mistakes left: ");
           Serial.println(mistakesLeft);
@@ -218,10 +218,10 @@ void setup() {
   initKeypad();
   pinMode(moduleSolvedPin, OUTPUT);
   digitalWrite(moduleSolvedPin, LOW);
-  module.begin();
+  slave.begin();
   Serial.println("Module initialized");
 }
 
 void loop() {
-  module.slaveLoop();
+  slave.slaveLoop();
 }

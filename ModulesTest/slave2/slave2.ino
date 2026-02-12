@@ -4,7 +4,7 @@
 #define BUTTON_PIN 2
 #define LED_PIN 3
 
-Slave module(0x11); // I2C address 0x11
+Slave slave(0x11); // I2C address 0x11
 bool isSolved = false;
 bool gameStarted = false;
 
@@ -27,15 +27,15 @@ void setup() {
     pinMode(LED_PIN, OUTPUT);
     pinMode(9, OUTPUT);  // Set PB1 (Pin 9) as an output
     digitalWrite(9, HIGH);
-    module.begin();
-    module.onGameStart(handleGameStart);
-    module.onGameEnd(handleGameEnd);
+    slave.begin();
+    slave.onGameStart(handleGameStart);
+    slave.onGameEnd(handleGameEnd);
 }
 
 void loop() {
     if (gameStarted && !isSolved && digitalRead(BUTTON_PIN) == LOW) {
         Serial.println("Slave 2: Solved!");
-        module.setStatus(STATUS_PASSED);
+        slave.setStatus(STATUS_PASSED);
         digitalWrite(LED_PIN, HIGH);
         isSolved = true; // Lock state to solved
         delay(500); // Debounce delay

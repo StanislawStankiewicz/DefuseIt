@@ -42,7 +42,7 @@ void processToggleFast(int currentState);
 void processHoldLong(int currentState);
 void setColor(uint8_t r, uint8_t g, uint8_t b);
 
-Slave module(SLAVE_ADDRESS, gameLoop, resetState, SOLVED_LED_PIN);
+Slave slave(SLAVE_ADDRESS, gameLoop, resetState, SOLVED_LED_PIN);
 
 void setup() {
 	pinMode(SWITCH_PIN, INPUT_PULLUP);
@@ -52,11 +52,11 @@ void setup() {
 	setColor(0, 0, 0);
 	Serial.begin(9600);
 	randomSeed(analogRead(A0) ^ millis());
-	module.begin();
+	slave.begin();
 }
 
 void loop() {
-	module.slaveLoop();
+	slave.slaveLoop();
 }
 
 void gameLoop() {
@@ -84,7 +84,7 @@ void resetState() {
 }
 
 void armChallenge() {
-	uint8_t seed = module.getVersion();
+	uint8_t seed = slave.getVersion();
 	randomSeed((millis() << 4) ^ seed);
 	uint8_t index = random(CHALLENGE_COUNT);
 	activeChallenge = &CHALLENGES[index];
@@ -109,15 +109,15 @@ void processToggleFast(int currentState) {
 
 	if (currentState == initialSwitchState) {
 		if (now - firstToggleTime <= FAST_WINDOW_MS) {
-			module.pass();
+			slave.pass();
 		} else {
-			module.fail();
+			slave.fail();
 		}
 		return;
 	}
 
 	if (now - firstToggleTime > FAST_WINDOW_MS) {
-		module.fail();
+		slave.fail();
 	}
 }
 
@@ -132,9 +132,9 @@ void processHoldLong(int currentState) {
 
 		unsigned long heldFor = now - holdStartTime;
 		if (heldFor >= HOLD_DURATION_MS) {
-			module.pass();
+			slave.pass();
 		} else if (heldFor > HOLD_RELEASE_GRACE_MS) {
-			module.fail();
+			slave.fail();
 		} else {
 			holdStartTime = 0;
 		}
@@ -144,7 +144,7 @@ void processHoldLong(int currentState) {
 	if (holdStartTime == 0) {
 		holdStartTime = now;
 	} else if (now - holdStartTime >= HOLD_DURATION_MS) {
-		module.pass();
+		slave.pass();
 	}
 }
 
