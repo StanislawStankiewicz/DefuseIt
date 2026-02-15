@@ -51,6 +51,7 @@ bool lastBtnRight   = HIGH;
 
 unsigned long lastInputTime = 0;
 const unsigned long INPUT_DELAY = 200;
+bool needsInitialRender = false;
 
 // Forward declarations
 void gameLoop();
@@ -68,7 +69,7 @@ void resetGameState() {
   display.display();
   placeGoal();
   placePlayer();
-  renderView();
+  needsInitialRender = true;
 }
 
 
@@ -231,6 +232,11 @@ void setup() {
 }
 
 void gameLoop() {
+  if (needsInitialRender) {
+    renderView();
+    needsInitialRender = false;
+  }
+
   bool btnLeft    = digitalRead(BTN_LEFT);
   bool btnForward = digitalRead(BTN_FORWARD);
   bool btnRight   = digitalRead(BTN_RIGHT);

@@ -12,6 +12,7 @@
 #define CMD_SET_VERSION 0x06
 #define CMD_IDENTIFY    0x07
 #define CMD_SET_REMAINING_SECONDS 0x08
+#define CMD_SET_MISTAKE_COUNT 0x09
 
 #define CMD_UNKNOWN    0xFF
 
@@ -34,6 +35,8 @@ public:
     void setModuleStatus(uint8_t index, uint8_t status);
     void sendVersion(uint8_t index);
     void sendRemainingSeconds(uint8_t moduleAddress, uint16_t remainingSeconds);
+    void sendMistakeCount(uint8_t moduleAddress, uint8_t mistakeCount);
+    void broadcastMistakeCount(uint8_t mistakeCount);
     uint8_t getVersion() const;
     void setVersion(uint8_t newVersion);
     uint8_t getModuleCount() const;
@@ -54,6 +57,7 @@ public:
     void begin();
     uint8_t getVersion();
     uint16_t getRemainingSeconds();
+    uint8_t getMistakeCount();
     static void startGame();
     void slaveLoop();
     void pass();
@@ -72,7 +76,6 @@ private:
 
     static GameLoop gameLoop;
     static ResetState resetState;
-    static 
 
     static void receiveEvent(int numBytes);
     static void requestEvent();

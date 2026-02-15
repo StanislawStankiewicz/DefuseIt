@@ -22,6 +22,19 @@ void Master::sendRemainingSeconds(uint8_t moduleAddress, uint16_t remainingSecon
     Wire.endTransmission();
 }
 
+void Master::sendMistakeCount(uint8_t moduleAddress, uint8_t mistakeCount) {
+    Wire.beginTransmission(moduleAddress);
+    Wire.write(CMD_SET_MISTAKE_COUNT);
+    Wire.write(mistakeCount);
+    Wire.endTransmission();
+}
+
+void Master::broadcastMistakeCount(uint8_t mistakeCount) {
+    for (uint8_t i = 0; i < moduleCount; i++) {
+        sendMistakeCount(moduleAddresses[i], mistakeCount);
+    }
+}
+
 void Master::discoverModules() {
     moduleCount = 0;
 
@@ -36,7 +49,7 @@ void Master::discoverModules() {
         Wire.requestFrom(address, (uint8_t)1);
 
         if (Wire.available() && Wire.read() == CMD_IDENTIFY) {
-            if (moduleCount < 10) {
+            if (moduleCount < 11) {
                 moduleAddresses[moduleCount++] = address;
             }
         }
@@ -137,6 +150,10 @@ uint16_t Slave::getRemainingSeconds() {
     return remainingSeconds;
 }
 
+uint8_t Slave::getMistakeCount() {
+    return mistakes;
+}
+
 void Slave::startGame() {
     digitalWrite(led_pin, LOW);
     resetState();
@@ -199,6 +216,12 @@ void Slave::receiveEvent(int numBytes) {
                 uint8_t highByte = Wire.read();
                 uint8_t lowByte = Wire.read();
                 remainingSeconds = (uint16_t(highByte) << 8) | lowByte;
+            }
+            break;
+
+        case CMD_SET_MISTAKE_COUNT:
+            if (Wire.available() >= 1) {
+                mistakes = Wire.read();
             }
             break;
 

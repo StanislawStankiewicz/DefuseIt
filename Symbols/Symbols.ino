@@ -38,6 +38,23 @@ void disableAllChannels() {
     Wire.endTransmission();
 }
 
+void clearChannel(uint8_t channel) {
+    uint8_t muxIndex = channel - 1 + CHANNEL_SHIFT;
+    if (muxIndex > 7) return;
+    selectMuxChannel(muxIndex);
+    delay(30);
+
+    Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+    if (!display.begin(SSD1306_SWITCHCAPVCC, MUX_LCD_ADDR)) {
+        disableAllChannels();
+        return;
+    }
+
+    display.clearDisplay();
+    display.display();
+    disableAllChannels();
+}
+
 void drawSymbolOnChannel(uint8_t channel, char symbol) {
     uint8_t muxIndex = channel - 1 + CHANNEL_SHIFT;
     if (muxIndex > 7) return;
@@ -67,6 +84,12 @@ void resetState() {
         pinMode(buttonPins[i], INPUT_PULLUP);
         lastButtonState[i] = digitalRead(buttonPins[i]);
     }
+
+    for (uint8_t ch = 1; ch <= CHANNEL_COUNT; ++ch) {
+        clearChannel(ch);
+        delay(10);
+    }
+
     displaysInitialized = false;
     startPending = true;
 }

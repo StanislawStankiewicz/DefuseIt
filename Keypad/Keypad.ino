@@ -33,6 +33,13 @@ Slave slave(SLAVE_ADDRESS, gameLoop, resetState, moduleSolvedPin);
 
 bool updateDisplay = false;
 String lastBinary = "";
+bool waitingAfterMistake = false;
+unsigned long nextEquationAt = 0;
+const unsigned long KEYPAD_DEBOUNCE_MS = 50;
+char lastRawKey = '\0';
+char debouncedKey = '\0';
+bool keyReported = false;
+unsigned long keyLastChangeAt = 0;
 
 void lcdClearLine(int row) {
   lcd.setCursor(0, row);
@@ -121,13 +128,11 @@ void initKeypad() {
   Serial.println("Keypad initialized.");
 }
 
-char scanKeypad() {
+char scanRawKeypad() {
   for (int row = 0; row < 4; row++) {
     digitalWrite(rowPins[row], LOW);
     for (int col = 0; col < 4; col++) {
       if (digitalRead(colPins[col]) == LOW) {
-        delay(50); // Debounce delay
-        while (digitalRead(colPins[col]) == LOW);
         char key = keymap[row][col];
         digitalWrite(rowPins[row], HIGH);
         return key;
@@ -135,6 +140,34 @@ char scanKeypad() {
     }
     digitalWrite(rowPins[row], HIGH);
   }
+  return '\0';
+}
+
+char scanKeypad() {
+  char rawKey = scanRawKeypad();
+  unsigned long now = millis();
+
+  if (rawKey != lastRawKey) {
+    lastRawKey = rawKey;
+    keyLastChangeAt = now;
+  }
+
+  if (now - keyLastChangeAt < KEYPAD_DEBOUNCE_MS) {
+    return '\0';
+  }
+
+  if (rawKey != debouncedKey) {
+    debouncedKey = rawKey;
+    if (debouncedKey == '\0') {
+      keyReported = false;
+    }
+  }
+
+  if (debouncedKey != '\0' && !keyReported) {
+    keyReported = true;
+    return debouncedKey;
+  }
+
   return '\0';
 }
 
@@ -152,13 +185,32 @@ void checkModuleState() {
 }
 
 void resetState() {
-  currentMode = selectMode(slave.getVersion());
+  int version = slave.getVersion();
+  unsigned long seed = millis() + version;
+
+  Serial.print("RNG version: ");
+  Serial.println(version);
+  Serial.print("RNG seed: ");
+  Serial.println(seed);
+
+  randomSeed(seed);
+  currentMode = selectMode(version);
+  waitingAfterMistake = false;
+  nextEquationAt = 0;
   generateEquation();
-  randomSeed(millis() + slave.getVersion());
   lcd.clear();
 }
 
 void gameLoop() {
+  if (waitingAfterMistake) {
+    if (millis() >= nextEquationAt) {
+      waitingAfterMistake = false;
+      generateEquation();
+    } else {
+      return;
+    }
+  }
+
   if (updateDisplay) {
     if (currentMode == BINARY && lastBinary.length() > 0) {
       lcd.clear();
@@ -197,8 +249,11 @@ void gameLoop() {
         } else {
           Serial.print("Incorrect. Mistakes left: ");
           Serial.println(mistakesLeft);
-          delay(random(1000, 10000));
-          generateEquation();
+          unsigned long waitMs = random(1000, 10000);
+          nextEquationAt = millis() + waitMs;
+          waitingAfterMistake = true;
+          Serial.print("Next equation in ms: ");
+          Serial.println(waitMs);
         }
       }
       userInput = "";

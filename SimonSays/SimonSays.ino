@@ -253,6 +253,10 @@ void resetState() {
     showIndex = 0;
     ledActive = false;
     lastPressedButton = -1;
+    for (int i = 0; i < 4; i++) {
+        digitalWrite(LED_PINS[i], LOW);
+    }
+    noTone(SPEAKER_PIN);
 }
 
 void setup() {

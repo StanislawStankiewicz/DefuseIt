@@ -135,6 +135,10 @@ void updateTimeSyncModules(int secondsLeft) {
   }
 }
 
+void updateMistakeCountModules() {
+  master.broadcastMistakeCount((uint8_t)mistakeCount);
+}
+
 void displayVersion(int val) {
   if (val < 0)   val = 0;
   if (val > 99)  val = 99;
@@ -162,6 +166,7 @@ void startGame() {
   master.setVersion(random(1, 100));
   displayVersion(master.getVersion());
   master.startGame();
+  updateMistakeCountModules();
   isGameInProgress = true;
   remainingTime = gameDurationSeconds;
   lastTimerUpdate = millis();
@@ -193,7 +198,8 @@ void resetGame() {
   displayTime(remainingTime);
   clearVersionDisplay();
   
-  master.initializeModules();
+  initializeModules();
+  updateMistakeCountModules();
 }
 
 void handleSwitch() {
@@ -351,6 +357,7 @@ void checkWinLose() {
 
   if (failedModuleIndex != -1 && !isHandlingFailure) {
     mistakeCount++;
+    updateMistakeCountModules();
     if (mistakeCount >= maxMistakes) {
       Serial.println("Master: Game lost - too many mistakes!");
       master.endGame();

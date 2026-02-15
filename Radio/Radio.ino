@@ -22,7 +22,7 @@
 #define SCREEN_HEIGHT 64
 
 // --- Game Constants ---
-#define BLINK_UNIT 250 // ms duration of a dot
+#define BLINK_UNIT 500 // ms duration of a dot
 
 // Define strings in PROGMEM to save RAM
 const char m_0[] PROGMEM = "... .... . .-.. .-..";
@@ -63,7 +63,7 @@ const RadioTarget targets[] = {
     {3582, m_12},      // steak
     {3592, m_13},      // sting
     {3595, m_14},      // vector
-    {3600, m_15}       // beats
+    {3608, m_15}       // beats
 };
 #define NUM_TARGETS (sizeof(targets) / sizeof(targets[0]))
 
@@ -72,7 +72,7 @@ Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT,
   OLED_MOSI, OLED_CLK, OLED_DC, OLED_RST, OLED_CS);
 
 int targetIndex = 0;            // The correct answer index
-uint16_t currentFreq = 3500;    // The user's currently selected frequency (3500-3600)
+uint16_t currentFreq = 3550;    // The user's currently selected frequency (3500-3608)
 
 // Encoder State
 int lastClk = LOW;
@@ -87,6 +87,7 @@ int morseIndex = 0;             // Position in the morse string
 bool ledState = false;          // Current LED state
 unsigned long lastMorseTime = 0;
 bool isGap = false;             // Are we in a gap between symbols?
+bool needsInitialRender = false;
 
 // Forward Declarations
 void gameLoop();
@@ -135,19 +136,22 @@ void resetState() {
     char buffer[32];
     strcpy_P(buffer, targets[targetIndex].morse);
     
-    currentFreq = 3500; 
-
     morseIndex = 0;
     ledState = false;
     isGap = false;
     lastMorseTime = 0;
     digitalWrite(MORSE_LED_PIN, LOW);
-
-    updateDisplay();
+    display.clearDisplay();
+    display.display();
+    needsInitialRender = true;
 }
 
 // Called continuously when game is active
 void gameLoop() {
+    if (needsInitialRender) {
+        updateDisplay();
+        needsInitialRender = false;
+    }
     handleEncoder();
     handleButton();
     handleMorseCode();
@@ -157,11 +161,13 @@ void handleEncoder() {
     int newClk = digitalRead(ENCODER_PIN_A);
     if (newClk != lastClk && newClk == LOW) {
         if (digitalRead(ENCODER_PIN_B) == HIGH) {
-            currentFreq++;
-            if (currentFreq > 3600) currentFreq = 3500;
+            if (currentFreq < 3608) {
+                currentFreq++;
+            }
         } else {
-            currentFreq--;
-            if (currentFreq < 3500) currentFreq = 3600;
+            if (currentFreq > 3500) {
+                currentFreq--;
+            }
         }
         updateDisplay();
     }
