@@ -33,8 +33,11 @@ unsigned long stateTimer = 0;
 bool ledActive = false;
 int lastPressedButton = -1;
 
+enum ColorIndex { RED = 0, BLUE = 1, YELLOW = 2, GREEN = 3 };
+
 void gameLoop();
 void resetState();
+int mapColorByMistakes(int shownColor, uint8_t mistakeCount);
 Slave slave(0x11, gameLoop, resetState, 2);
 
 // --- Helpers ---
@@ -64,17 +67,36 @@ void debugButtonEvent(const __FlashStringHelper* action, int buttonIndex) {
     Serial.print(F(" index="));
     Serial.print(buttonIndex);
     Serial.print(F(" expected="));
-    if (inputIndex >= 0 && inputIndex < sequenceLength) {
-        Serial.print(sequence[inputIndex]);
+    if (inputIndex >= 0 && inputIndex < currentLength) {
+        Serial.print(mapColorByMistakes(sequence[inputIndex], slave.getMistakeCount()));
     } else {
         Serial.print(F("-"));
     }
+    Serial.print(F(" mistakes="));
+    Serial.print(slave.getMistakeCount());
     Serial.print(F(" inputIndex="));
     Serial.print(inputIndex);
     Serial.print(F(" currentLength="));
     Serial.print(currentLength);
     Serial.print(F(" state="));
     Serial.println(stateName(currentState));
+}
+
+int mapColorByMistakes(int shownColor, uint8_t mistakeCount) {
+    if (shownColor < 0 || shownColor > 3) return shownColor;
+
+    if (mistakeCount == 0) {
+        const int map0[4] = {BLUE, RED, GREEN, YELLOW};
+        return map0[shownColor];
+    }
+
+    if (mistakeCount == 1) {
+        const int map1[4] = {YELLOW, GREEN, BLUE, RED};
+        return map1[shownColor];
+    }
+
+    const int map2plus[4] = {GREEN, YELLOW, RED, BLUE};
+    return map2plus[shownColor];
 }
 
 void debugSequence() {
@@ -187,7 +209,8 @@ void handleWaitingInput() {
         debugButtonEvent(F("RELEASE"), lastPressedButton);
         setFeedback(lastPressedButton, false, true);
         
-        if (lastPressedButton == sequence[inputIndex]) {
+        int expectedButton = mapColorByMistakes(sequence[inputIndex], slave.getMistakeCount());
+        if (lastPressedButton == expectedButton) {
             if (DEBUG) Serial.println(F("[OK] Correct button"));
             inputIndex++;
             stateTimer = millis(); 
