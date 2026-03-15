@@ -1,7 +1,6 @@
 #include <Wire.h>
 #include "ModuleComms.h"
 #include <TM1637Display.h>
-#include <math.h>
 
 #define BUTTON_PIN     2
 #define RED_LED_PIN    3
