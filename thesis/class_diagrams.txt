@@ -1,0 +1,318 @@
+# 1
+classDiagram
+    direction TB
+
+    %% Definicja Protokołu Komunikacyjnego i Typów
+    class Protocol {
+        <<enumeration>>
+        CMD_START_GAME = 0x01
+        CMD_END_GAME = 0x02
+        CMD_GET_STATUS = 0x03
+        CMD_SET_STATUS = 0x04
+        CMD_GET_VERSION = 0x05
+        CMD_SET_VERSION = 0x06
+        CMD_IDENTIFY = 0x07
+        CMD_SET_REMAINING_SECONDS = 0x08
+        CMD_SET_MISTAKE_COUNT = 0x09
+        CMD_UNKNOWN = 0xFF
+    }
+
+    class Status {
+        <<enumeration>>
+        STATUS_UNSOLVED = 0x01
+        STATUS_PASSED = 0x02
+        STATUS_FAILED = 0x03
+    }
+
+    class FunctionPointers {
+        <<typedef>>
+        GameLoop : void*
+        ResetState : void*
+    }
+
+    %% Klasa Master
+    class Master {
+        -uint8_t version
+        -uint8_t moduleAddresses[11]
+        -uint8_t moduleCount
+        +Master(uint8_t version)
+        +begin() void
+        +discoverModules() void
+        +startGame() void
+        +endGame() void
+        +restartFailedModule(uint8_t index) void
+        +getModuleStatus(uint8_t index) uint8_t
+        +setModuleStatus(uint8_t index, uint8_t status) void
+        +sendVersion(uint8_t index) void
+        +sendRemainingSeconds(uint8_t moduleAddress, uint16_t remainingSeconds) void
+        +sendMistakeCount(uint8_t moduleAddress, uint8_t mistakeCount) void
+        +broadcastMistakeCount(uint8_t mistakeCount) void
+        +getVersion() uint8_t
+        +setVersion(uint8_t newVersion) void
+        +getModuleCount() uint8_t
+        +getModuleAddress(uint8_t index) uint8_t
+        +sendCommand(uint8_t moduleAddress, uint8_t command) void
+    }
+
+    %% Klasa Slave
+    class Slave {
+        -static uint8_t moduleAddress$
+        -static uint8_t status$
+        -static uint8_t masterVersion$
+        -static uint16_t remainingSeconds$
+        -static uint8_t mistakes$
+        -static uint8_t command$
+        -static uint8_t led_pin$
+        -static bool isGameActive$
+        -static GameLoop gameLoop$
+        -static ResetState resetState$
+        +Slave(uint8_t address, GameLoop loop, ResetState setState, uint8_t pin)
+        +begin() void
+        +getVersion() uint8_t
+        +getRemainingSeconds() uint16_t
+        +getMistakeCount() uint8_t
+        +static startGame() void$
+        +slaveLoop() void
+        +pass() void
+        +fail() void
+        +static endGame() void$
+        -static receiveEvent(int numBytes) void$
+        -static requestEvent() void$
+    }
+
+    %% Relacje
+    Master ..> Protocol : uses
+    Slave ..> Protocol : uses
+    Slave ..> Status : uses
+    Slave ..> FunctionPointers : uses
+    Master "1" -- "*" Slave : I2C Communication
+
+2
+classDiagram
+    direction TB
+
+    class Slave {
+        <<ModuleComms>>
+        +Slave(address, gameLoop, resetState, pin)
+        +begin() void
+        +slaveLoop() void
+        +pass() void
+        +fail() void
+        +getVersion() uint8_t
+        +getRemainingSeconds() uint16_t
+        +getMistakeCount() uint8_t
+    }
+
+    class RadioModule {
+        <<Radio.ino>>
+        -Adafruit_SH1106G display
+        -RadioTarget targets[16]
+        -int targetIndex
+        -uint16_t currentFreq
+        -int morseIndex
+        -bool ledState
+        -bool isGap
+        +gameLoop() void
+        +resetState() void
+        -handleEncoder() void
+        -handleButton() void
+        -handleMorseCode() void
+        -updateDisplay() void
+    }
+
+    class RadioTarget {
+        <<struct>>
+        +uint16_t freq
+        +const char* morse
+    }
+
+    class LabyrinthModule {
+        <<Labyrinth.ino>>
+        -Adafruit_SH1106G display
+        -uint8_t labyrinth[8][8]
+        -int playerX
+        -int playerY
+        -int playerDir
+        -int goalX
+        -int goalY
+        +gameLoop() void
+        +resetState() void
+        -renderView() void
+        -moveForward() bool
+        -turnLeft() void
+        -turnRight() void
+        -canMove(x, y) bool
+        -drawBitmap(bitmap) void
+    }
+
+    class SimonSaysModule {
+        <<SimonSays.ino>>
+        -int sequence[5]
+        -int sequenceLength
+        -int currentLength
+        -int inputIndex
+        -GameState currentState
+        +gameLoop() void
+        +resetState() void
+        -handleUnengaged() void
+        -handleShowing() void
+        -handleWaitingInput() void
+        -setFeedback(index, active, sound) void
+        -getPressedButton() int
+        -mapColorByMistakes(color, mistakes) int
+    }
+
+    class GameState {
+        <<enumeration>>
+        UNENGAGED
+        SHOWING
+        WAITING_INPUT
+        ROUND_CLEAR
+    }
+
+    class KeypadModule {
+        <<Keypad.ino>>
+        -LiquidCrystal lcd
+        -String userInput
+        -String currentEquation
+        -int correctAnswer
+        -int puzzlesSolved
+        -int requiredPuzzles
+        -Mode currentMode
+        +gameLoop() void
+        +resetState() void
+        -generateEquation() void
+        -scanKeypad() char
+        -scanRawKeypad() char
+        -checkModuleState() void
+    }
+
+    class Mode {
+        <<enumeration>>
+        MATH
+        BINARY
+    }
+
+    class SwitchModule {
+        <<Switch.ino>>
+        -ColorId initialColor
+        -ActionType activeAction
+        -ColorId releaseColor
+        -uint8_t releaseDigit
+        -bool challengeArmed
+        -bool holdStripActive
+        +gameLoop() void
+        +resetState() void
+        -armChallenge() void
+        -processClick(state) void
+        -processHold(state) void
+        -determineAction(color, version) ActionType
+        -pickReleaseColor() ColorId
+        -setColorById(color) void
+    }
+
+    class ActionType {
+        <<enumeration>>
+        ACTION_CLICK
+        ACTION_HOLD
+    }
+
+    class ColorId {
+        <<enumeration>>
+        COLOR_RED
+        COLOR_BLUE
+        COLOR_GREEN
+        COLOR_YELLOW
+        COLOR_WHITE
+        COLOR_PURPLE
+    }
+
+    class ColorDef {
+        <<struct>>
+        +const char* name
+        +uint8_t r
+        +uint8_t g
+        +uint8_t b
+    }
+
+    RadioModule --> Slave : uses
+    LabyrinthModule --> Slave : uses
+    SimonSaysModule --> Slave : uses
+    KeypadModule --> Slave : uses
+    SwitchModule --> Slave : uses
+
+    SimonSaysModule --> GameState : uses
+    KeypadModule --> Mode : uses
+    SwitchModule --> ActionType : uses
+    SwitchModule --> ColorId : uses
+    SwitchModule --> ColorDef : uses
+    RadioModule --> RadioTarget : uses
+
+3
+classDiagram
+    direction LR
+
+    class Wire_h {
+        <<Wire.h>>
+        +begin() void
+        +beginTransmission(addr) void
+        +endTransmission() uint8_t
+        +requestFrom(addr, qty) uint8_t
+        +write(data) size_t
+        +read() int
+        +onReceive(handler) void
+        +onRequest(handler) void
+    }
+
+    class Adafruit_GFX {
+        <<Adafruit_GFX.h>>
+        +setTextSize(size) void
+        +setTextColor(color) void
+        +setCursor(x, y) void
+        +print(text) void
+    }
+
+    class Adafruit_SH1106G {
+        <<Adafruit_SH110X.h>>
+        +begin(mode, addr) bool
+        +clearDisplay() void
+        +display() void
+        +drawBitmap(x, y, bmp, w, h, color) void
+    }
+
+    class SPI_h {
+        <<SPI.h>>
+        +begin() void
+        +transfer(data) uint8_t
+    }
+
+    class TM1637Display {
+        <<TM1637Display.h>>
+        +setBrightness(level) void
+        +showNumberDecEx(num, dots, zeros) void
+    }
+
+    class LiquidCrystal {
+        <<LiquidCrystal.h>>
+        +begin(cols, rows) void
+        +clear() void
+        +setCursor(col, row) void
+        +print(text) void
+    }
+
+    class ModuleComms {
+        <<ModuleComms.h>>
+        Master
+        Slave
+    }
+
+    Adafruit_SH1106G --|> Adafruit_GFX : extends
+    Adafruit_SH1106G ..> SPI_h : uses
+
+    ModuleComms ..> Wire_h : "I2C communication"
+
+    note for ModuleComms "Wszystkie moduły\nkorzystają z ModuleComms\n(Master lub Slave)"
+
+    TM1637Display -- ModuleComms : "Master.ino"
+    Adafruit_SH1106G -- ModuleComms : "Radio.ino, Labyrinth.ino"
+    LiquidCrystal -- ModuleComms : "Keypad.ino"

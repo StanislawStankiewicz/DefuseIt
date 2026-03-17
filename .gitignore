@@ -1,0 +1,15 @@
+thesis/examples/
+.vscode/
+
+thesis/thesis.aux
+thesis/thesis.bbl
+thesis/thesis.blg
+thesis/thesis.log
+thesis/thesis.out
+thesis/thesis.syn
+thesis/thesis.toc
+thesis/thesis.lot
+thesis/thesis.lof
+thesis/thesis.fls
+thesis/thesis.fdb_latexmk
+thesis/thesis.synctex.gz
