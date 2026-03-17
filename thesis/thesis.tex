@@ -67,7 +67,7 @@ literate={ą}{{\k{a}}}1
 \statementpage
 
 \abstractpage
-{Tematem pracy jest zaprojektowanie i implementacja modułowego systemu interaktywnych zadań logicznych opartego na mikrokontrolerach ATmega328P. Projekt zakładał stworzenie systemu wbudowanego stymulującego współpracę grupy użytkowników rozwiązujących powiązane zagadki pod presją czasu. Architektura umożliwia dowolną konfigurację oraz łatwe rozszerzanie układu o kolejne niezależne moduły. Praca obejmuje fazę koncepcyjną, projektowanie sprzętowe, implementację protokołu komunikacyjnego I$^2$C oraz integrację oprogramowania w języku C++. Wyniki testów wskazują, że zaimplementowane podsystemy działają stabilnie, a przyjęta sieć Master-Slave zapewnia skalowalność środowiska.}
+{Tematem pracy jest zaprojektowanie i implementacja modułowego systemu interaktywnych zadań logicznych opartego na mikrokontrolerach ATmega328P. Projekt zakładał stworzenie systemu wbudowanego stymulującego współpracę grupy użytkowników rozwiązujących powiązane zagadki pod presją czasu. Architektura umożliwia dowolną konfigurację oraz łatwe rozszerzanie układu o kolejne niezależne moduły. Praca obejmuje fazę koncepcyjną, projektowanie sprzętowe, implementację protokołu komunikacyjnego I$^2$C oraz integrację oprogramowania w języku C++. Wyniki testów wskazują, że zaimplementowane podsystemy działają stabilnie, a przyjęta sieć Nadrzędny-Podrzędny (ang. \textit{Master-Slave}) zapewnia skalowalność środowiska.}
 {modułowy system wbudowany, C++, I2C, ATmega328P, praca inżynierska, SGGW}
 {Modular logic task system implemented in C++ language for the ATmega328P microcontroller}
 {The subject of this thesis is the design and implementation of a modular system of interactive logic tasks based on ATmega328P microcontrollers. The project involved creating an embedded system that stimulates the cooperation of a group of users solving interrelated puzzles under time pressure. The system architecture was planned to allow for arbitrary configuration and easy expansion with additional independent modules. The thesis covers the conceptual phase, hardware design, implementation of a communication protocol based on the I$^2$C bus, and software integration in C++. Validation test results indicate that the implemented subsystems exhibit stable operation, and the adopted Master-Slave network ensures scalability of the environment.}
@@ -94,12 +94,12 @@ Wybór tematu podyktowany był chęcią weryfikacji zagadnień związanych z pro
 Projektowany system czerpie inspirację z popularnej gry kooperacyjnej \textit{Keep Talking and Nobody Explodes}, w której gracze muszą wspólnie rozbroić bombę, komunikując się i rozwiązując zagadki logiczne. Na rynku istnieją również komercyjne platformy dla pokoi zagadek (np. \textit{Escape Room Master}), oferujące gotowe sterowniki i oprogramowanie. Jednak większość tych rozwiązań opiera się na drogich sterownikach PLC lub mikrokomputerach typu Raspberry Pi. Niniejszy projekt udowadnia, że podobną funkcjonalność można osiągnąć przy użyciu znacznie tańszych i bardziej energooszczędnych 8-bitowych mikrokontrolerów, zachowując przy tym pełną modularność i łatwość rozbudowy.
 
 \section{Zakres pracy}
-Niniejsza praca inżynierska obejmuje i podsumowuje pełen cykl rozwojowy komponentów – od zaplanowania architektury podziałowej i fizycznej budowy obwodów z użyciem technik lutowania oraz druku 3D obudów, poprzez opracowanie algorytmiki oprogramowania, aż do ostatecznych testów obciążeniowych sprzętu. Wyszczególniony wykaz obszarów zadaniowych zrealizowanych w ramach tego dyplomu to:
+Niniejsza praca inżynierska obejmuje pełen cykl projektowy i programistyczny – od zaplanowania architektury systemu i opracowania algorytmiki oprogramowania, aż do ostatecznych testów stabilności. Wyszczególniony wykaz obszarów zadaniowych zrealizowanych w ramach tego dyplomu to:
 \begin{itemize}
   \item opracowanie koncepcji sprzętowej i programowej topologii rozproszonej typu \textit{Master-Slave}, wykorzystującej mikrokontrolery ATmega328P \cite{atmega328p_datasheet},
   \item wdrożenie biblioteki \texttt{ModuleComms} opartej na protokole I$^2$C, obsługującej automatyczne wykrywanie modułów na magistrali (tzw. skanowanie adresów),
   \item zaprogramowanie stacji \textit{Master}, odpowiedzialnej za odliczanie czasu przy użyciu wielozadaniowości asynchronicznej oraz odbieranie potwierdzeń wykonania zadań z modułów,
-  \item montaż i zaprogramowanie w języku C++ modułów: arytmetycznego, labiryntu (wyświetlacz OLED), radiowego (interpretacja alfabetu Morse'a), sekwencyjnego (\textit{Simon Says}) oraz modułu z przełącznikiem dźwigniowym,
+  \item zaprogramowanie w języku C++ modułów: arytmetycznego, labiryntu (wyświetlacz OLED), radiowego (interpretacja alfabetu Morse'a), sekwencyjnego oraz modułu z przełącznikiem dźwigniowym,
   \item optymalizację użycia pamięci SRAM poprzez wykorzystanie pamięci Flash (dyrektywa \texttt{PROGMEM}) do przechowywania danych statycznych,
   \item realizację testów z uwzględnieniem sprzętowej i programowej eliminacji drgań styków (ang. \textit{debouncing}).
 \end{itemize}
@@ -139,7 +139,7 @@ Wymagania funkcjonalne definiują zakres operacji i możliwości, które system 
   \hline
   WF-03          & Determinizm konfiguracji (Seed)      & System inicjuje przed startem dystrybucję globalnego numeru konfiguracji po łączu I$^2$C, determinizując pseudolosowe zdarzenia we wszystkich układach.   \\
   \hline
-  WF-04          & Obsługa wielu typów modułów          & System obsługuje co najmniej pięć typów modułów: Keypad, Labyrinth, Radio, Simon Says oraz Switch.                                                        \\
+  WF-04          & Obsługa wielu typów modułów          & System obsługuje co najmniej pięć typów modułów: arytmetyczny, labiryntu, radiowy, sekwencyjny oraz z przełącznikiem.                                     \\
   \hline
   WF-05          & Detekcja i propagacja błędów         & Niepoprawne działanie operatora generuje zdarzenie błędu rejestrowane globalnie przez Master. Akumulacja błędów wpływa na zachowanie pozostałych modułów. \\
   \hline
@@ -195,32 +195,23 @@ Wymagania niefunkcjonalne definiują cechy jakościowe systemu oraz techniczne o
 Wymagania te stawiają priorytet na wielozadaniowość oraz optymalizację pamięci --- co jest krytyczne przy zaledwie 2\,KB pamięci SRAM. Istotna jest także modularność typu Plug-and-Play, pozwalająca na dowolne podłączanie modułów bez zmian w oprogramowaniu sterownika głównego.
 
 \section{Architektura systemu}
-
-System oparto na architekturze \textit{Master-Slave}, gdzie centralna jednostka koordynuje pracę modułów przez magistralę I$^2$C. Wybór ATmega328P \cite{atmega328p_datasheet} podyktowany był dostępem do sprzętowego kontrolera I$^2$C (TWI) oraz łatwością łączenia z popularnymi peryferiami 5\,V. Zastosowanie języka C++ pozwoliło na programowanie obiektowe z pełną kontrolą nad pamięcią.
-
-% ZDJĘCIE UŻYTKOWNIKA: Tutaj można dodać diagram blokowy architektury całego systemu
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.8\textwidth]{diagram_klas.png}
-  \caption{Schemat blokowy architektury sprzętowej Master-Slave realizowanej przez szynę I$^2$C (opracowanie własne)}
-  \label{fig:architektura}
-\end{figure}
+System oparto na architekturze nadrzędno-podrzędnej (ang. \textit{Master-Slave}), gdzie centralna jednostka koordynuje pracę modułów przez magistralę I$^2$C (\textit{Inter-Integrated Circuit}). Jest to szeregowy interfejs komunikacyjny wykorzystujący dwie linie sygnałowe: SDA (\textit{Serial Data}) do przesyłu danych oraz SCL (\textit{Serial Clock}) do synchronizacji zegarowej. Wybór tej magistrali podyktowany był jej oszczędnością w liczbie wymaganych połączeń oraz natywnym wsparciem przez sprzętowy kontroler TWI (\textit{Two Wire Interface}) mikrokontrolera ATmega328P \cite{atmega328p_datasheet}. Zastosowanie języka C++ pozwoliło na programowanie obiektowe z pełną kontrolą nad alokacją pamięci.
 
 Biblioteka \texttt{ModuleComms} zarządza komunikacją na niskim poziomie, wykorzystując sprzętowy protokół I$^2$C. Master inicjuje zapytania i przesyła informacje o czasie czy błędach, natomiast klasa \texttt{Slave} automatycznie obsługuje te żądania po stronie modułów. Dzięki zastosowanej abstrakcji programista modułu nie musi zajmować się obsługą magistrali, co pozwala skupić się na samej logice zagadki. Wyróżnia się trzy główne fazy pracy systemu:
 \begin{enumerate}
-  \item \textbf{Faza wykrywania (\textit{Discovery}):} Wywołanie pętli wysyłkowej z komendą 0x07 (\texttt{CMD\_IDENTIFY}), skanującej adresy od 1 do 126 z zapytaniem o rzetelną odpowiedź ACK sprzętu.
-  \item \textbf{Faza propagacji i rejestracji startu:} Przeprowadzenie inicjacyjnej transakcji rozgłaszanej z flagą \texttt{CMD\_START\_GAME}.
-  \item \textbf{Faza testowania cyklicznego stanu (\textit{Run Loop}):} Ciągłe odpytywanie modułów o ich stan logiczny, przechwytywanie zdarzeń błędu (\texttt{STATUS\_FAILED}) i sukcesu (\texttt{STATUS\_PASSED}).
+  \item \textbf{Faza wykrywania (ang. \textit{Discovery}):} Wywołanie pętli wysyłkowej z komendą 0x07 (\texttt{CMD\_IDENTIFY}), skanującej adresy od 1 do 126 z zapytaniem o rzetelną odpowiedź ACK sprzętu.
+  \item \textbf{Faza propagacji i rejestracji startu (ang. \textit{Propagation and Start}):} Przeprowadzenie inicjacyjnej transakcji rozgłaszanej z flagą \texttt{CMD\_START\_GAME}.
+  \item \textbf{Faza testowania cyklicznego stanu (ang. \textit{Run Loop}):} Ciągłe odpytywanie modułów o ich stan logiczny, przechwytywanie zdarzeń błędu (\texttt{STATUS\_FAILED}) i sukcesu (\texttt{STATUS\_PASSED}).
 \end{enumerate}
 
-\section{Konstrukcja fizyczna i montaż}
-Ważnym aspektem projektu było fizyczne wykonanie modułów. Każda stacja została zmontowana na dedykowanej płytce prototypowej, co umożliwiło łatwe wprowadzanie poprawek w trakcie testów. Wszystkie połączenia krytyczne (zasilanie, magistrala I$^2$C) zostały przylutowane w celu zapewnienia stabilności kontaktu pod wpływem drgań mechanicznych.
+\section{Konstrukcja i montaż modułów}
+Ważnym aspektem projektu była integracja komponentów elektronicznych w działające moduły. Każda stacja została przygotowana w sposób umożliwiający testowanie i weryfikację założeń projektowych. Wszystkie połączenia krytyczne (zasilanie, magistrala I$^2$C) zostały wykonane w sposób zapewniający stabilność komunikacji.
 
-W procesie produkcji wykorzystano:
+W procesie realizacji skupiono się na:
 \begin{itemize}
-  \item \textbf{Drukowanie 3D}: Obudowy dla modułów zostały zaprojektowane w programie typu CAD i wydrukowane z materiału PLA, co zapewniło estetyczny wygląd i ochronę elektroniki.
-  \item \textbf{Montaż mechaniczny}: Przyciski, enkoder oraz wyświetlacze zostały osadzone w otworach montażowych, co zapobiega ich przesuwaniu się podczas interakcji z użytkownikiem.
-  \item \textbf{Zasilanie}: Całość systemu zasilana jest napięciem 5\,V ze wspólnego źródła, co eliminuje potrzebę stosowania oddzielnych baterii dla każdego modułu.
+  \item \textbf{Przygotowaniu stanowisk}: Przyciski, enkoder oraz wyświetlacze zostały połączone z mikrokontrolerami zgodnie z opracowanymi schematami.
+  \item \textbf{Zasilaniu}: Całość systemu zasilana jest napięciem 5\,V ze wspólnego źródła, co zapewnia kompatybilność z mikrokontrolerami ATmega328P.
+  \item \textbf{Integracji peryferiów}: Każdy moduł posiada dedykowany zestaw elementów (np. matryce LED, ekrany LCD/OLED) ściśle współpracujących z warstwą oprogramowania.
 \end{itemize}
 
 \section{Diagramy klas}
@@ -236,7 +227,7 @@ Centralnym elementem architektury komunikacyjnej jest autorska biblioteka
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.95\textwidth]{diagram_klas.png}
+  \includegraphics[width=0.85\textwidth]{diagram_klas.png}
   \caption{Diagram klas biblioteki ModuleComms --- relacja Master-Slave z protokołem komunikacyjnym (opracowanie własne)}
   \label{fig:class_modulecomms}
 \end{figure}
@@ -244,7 +235,7 @@ Centralnym elementem architektury komunikacyjnej jest autorska biblioteka
 Diagram klas przedstawia strukturę autorskiej biblioteki komunikacyjnej, w tym klasy \texttt{Master} (odpowiadającą za jednostkę nadrzędną) oraz \texttt{Slave} (reprezentującą podległe moduły), a także powiązane z nimi typy wyliczeniowe \texttt{Protocol} i \texttt{Status}. Implementacja wykorzystuje mechanizm wstrzykiwania funkcji zwrotnych (wskaźniki \texttt{GameLoop} i \texttt{ResetState}), co pozwala na pełną separację warstwy sieciowej od logiki biznesowej konkretnych zadań.
 Metoda \texttt{getModuleStatus()} umożliwia odczyt stanu poszczególnych węzłów.
 
-Klasa \texttt{Slave} reprezentuje stronę odbiorczą protokołu. Wykorzystuje statyczne pola i metody ze względu na ograniczenia biblioteki \texttt{Wire.h}, która wymaga rejestracji funkcji zwrotnych w postaci wskaźników na funkcje wolnostojące. Wstrzykiwanie logiki gry odbywa się przez wskaźniki funkcyjne \texttt{GameLoop} oraz \texttt{ResetState}, przekazywane w konstruktorze --- stanowi to realizację wzorca \textit{Inversion of Control}, umożliwiającą każdemu modułowi zagadki dostarczenie własnej implementacji pętli gry bez modyfikacji kodu biblioteki komunikacyjnej.
+Klasa \texttt{Slave} reprezentuje stronę odbiorczą protokołu. Wykorzystuje statyczne pola i metody ze względu na ograniczenia biblioteki \texttt{Wire.h}, która wymaga rejestracji funkcji zwrotnych w postaci wskaźników na funkcje wolnostojące. Wstrzykiwanie logiki gry odbywa się przez wskaźniki funkcyjne \texttt{GameLoop} oraz \texttt{ResetState}, przekazywane w konstruktorze --- stanowi to realizację wzorca odwrócenia sterowania (ang. \textit{Inversion of Control}), umożliwiającą każdemu modułowi zagadki dostarczenie własnej implementacji pętli gry bez modyfikacji kodu biblioteki komunikacyjnej.
 
 Typy wyliczeniowe \texttt{Protocol} oraz \texttt{Status} definiują zestaw jednobajtowych kodów operacyjnych (\textit{opcodes}) przesyłanych na magistrali I$^2$C, zapewniając jednoznaczną interpretację ramek komunikacyjnych po obu stronach łącza.
 
@@ -260,7 +251,7 @@ Każdy moduł zagadki w systemie stanowi niezależną jednostkę logiczną, inte
   \label{fig:class_modules}
 \end{figure}
 
-Wspólnym elementem architektury wszystkich modułów jest mechanizm wstrzykiwania callbacków --- każdy moduł przekazuje w konstruktorze klasy \texttt{Slave} wskaźniki na swoje funkcje \texttt{gameLoop()} oraz \texttt{resetState()}, realizując wzorzec \textit{Inversion of Control}. Dzięki temu klasa \texttt{Slave} wywołuje logikę specyficzną dla danego modułu bez znajomości jej implementacji.
+Wspólnym elementem architektury wszystkich modułów jest mechanizm wstrzykiwania funkcji zwrotnych (ang. \textit{callbacks}) --- każdy moduł przekazuje w konstruktorze klasy \texttt{Slave} wskaźniki na swoje funkcje \texttt{gameLoop()} oraz \texttt{resetState()}, realizując wzorzec odwrócenia sterowania (ang. \textit{Inversion of Control}). Dzięki temu klasa \texttt{Slave} wywołuje logikę specyficzną dla danego modułu bez znajomości jej implementacji.
 
 Moduły różnią się znacząco pod względem złożoności wewnętrznej. Moduł sekwencyjny wykorzystuje maszynę stanów (enum \texttt{GameState}) do zarządzania fazami rozgrywki, natomiast moduł z przełącznikiem operuje na typach wyliczeniowych \texttt{ActionType} i \texttt{ColorId} definiujących logikę decyzyjną opartą na kolorze diody RGB i numerze wersji gry. Moduł arytmetyczny implementuje dwa tryby pracy (enum \texttt{Mode}: arytmetyczny i binarny), a moduł radiowy przechowuje tablicę struktur \texttt{RadioTarget} z częstotliwościami i kodami Morse'a w pamięci Flash (\texttt{PROGMEM}).
 
@@ -286,21 +277,21 @@ W niniejszym rozdziale przedstawiono technologie, narzędzia oraz biblioteki wyk
 \section{Mikrokontroler ATmega328P}
 ATmega328P \cite{atmega328p_datasheet} to 8-bitowy mikrokontroler z rodziny AVR, posiadający 32\,KB pamięci programu (Flash), 2\,KB pamięci operacyjnej (SRAM) oraz 1\,KB pamięci danych (EEPROM). Dzięki architekturze RISC większość instrukcji wykonuje w jednym cyklu zegara, co zapewnia dobrą wydajność przy niskim poborze energii.
 
-Wybór tego układu podyktowany był trzema czynnikami. Po pierwsze, jest on sercem popularnej platformy Arduino Uno, co daje dostęp do ogromnej liczby bibliotek oraz materiałów edukacyjnych. Po drugie, oferuje natywną obsługę peryferiów pracujących w standardzie 5\,V, co eliminuje potrzebę stosowania konwerterów napięć. Po trzecie, posiada sprzętowy kontroler I$^2$C (TWI), który jest fundamentem komunikacji w tym systemie.
+Wybór tego układu podyktowany był trzema czynnikami. Po pierwsze, stanowi on fundament popularnej platformy Arduino Uno, co daje dostęp do bardzo dużej liczby bibliotek oraz materiałów edukacyjnych. Po drugie, oferuje natywną obsługę peryferiów pracujących w standardzie 5\,V, co eliminuje potrzebę stosowania konwerterów napięć. Po trzecie, posiada sprzętowy kontroler I$^2$C (TWI), który jest fundamentem komunikacji w tym systemie.
 
-W projekcie układy pracują pod kontrolą wewnętrznego oscylatora RC skonfigurowanego na częstotliwość 8\,MHz. Wykorzystanie wbudowanego źródła sygnału zegarowego, zamiast zewnętrznego kwarcu, obniża złożoność i koszt obwodu, a jednocześnie pozwala na pracę w poszerzonym zakresie napięć zasilania od 2.7\,V do 5.5\,V. Choć wbudowany oscylator charakteryzuje się tolerancją wahań do $\pm10\%$ (w stałych warunkach pokojowych błąd oscyluje w granicach $\pm$1--2\%), odchylenia te są pomijalne w kontekście działania gry oraz obsługi magistrali I$^2$C. Konfigurację niskopoziomową mikrokontrolera (ustawienie fuzji \textit{fuses}, m.in. \texttt{LFUSE: 0xE2}) przeprowadzono bezpośrednio przy użyciu narzędzia wiersza poleceń \texttt{avrdude}, co umożliwiło precyzyjne sterowanie parametrami pracy układu bez użycia dodatkowych nakładek systemowych. Bezpośrednie wgrywanie oprogramowania przez złącze ISP pozwoliło całkowicie wyeliminować bootloader, dzięki czemu kod programu ma do dyspozycji pełne 32\,KB pamięci Flash. Jest to istotna optymalizacja względem standardowej platformy Arduino Uno, w której część pamięci programu stale zajmuje program rozruchowy.
+W projekcie układy pracują pod kontrolą wewnętrznego oscylatora RC skonfigurowanego na częstotliwość 8\,MHz. Wykorzystanie wbudowanego źródła sygnału zegarowego, zamiast zewnętrznego rezonatora kwarcowego dostarczającego sygnał taktujący, obniża złożoność i koszt obwodu, a jednocześnie pozwala na pracę w poszerzonym zakresie napięć zasilania od 2.7\,V do 5.5\,V. Choć wbudowany oscylator charakteryzuje się tolerancją wahań do $\pm10\%$ (w stałych warunkach pokojowych błąd oscyluje w granicach $\pm$1--2\%), odchylenia te są pomijalne w kontekście działania gry oraz obsługi magistrali I$^2$C. Konfigurację niskopoziomową mikrokontrolera (ustawienie bitów konfiguracyjnych (ang. \textit{fuse bits}), odpowiedzialnych za trwałe ustawienia sprzętowe układu) przeprowadzono bezpośrednio przy użyciu narzędzia wiersza poleceń \texttt{avrdude}, co umożliwiło precyzyjne sterowanie parametrami pracy układu bez użycia dodatkowych nakładek systemowych. Bezpośrednie wgrywanie oprogramowania przez złącze programowania wewnątrzsystemowego (ang. \textit{In-System Programming} --- ISP) pozwoliło całkowicie wyeliminować program rozruchowy (ang. \textit{bootloader}), dzięki czemu kod programu ma do dyspozycji pełne 32\,KB pamięci Flash. Jest to istotna optymalizacja względem standardowej platformy Arduino Uno, w której część pamięci programu stale zajmuje wspomniany program rozruchowy.
 
 \section{Środowisko Arduino IDE}
 Arduino IDE \cite{cpp_arduino_ref} to środowisko programistyczne ułatwiające tworzenie oprogramowania na mikrokontrolery. Pozwala na pisanie kodu w C++ z wykorzystaniem gotowych bibliotek obsługujących m.in. przerwania czy komunikację.
 
 Wybór Arduino IDE, zamiast alternatyw takich jak PlatformIO czy Atmel Studio, podyktowany był przede wszystkim dojrzałością ekosystemu bibliotek kompatybilnych z platformą AVR oraz niskim progiem wejścia przy prototypowaniu. Choć PlatformIO oferuje bardziej zaawansowane zarządzanie zależnościami, Arduino IDE zapewniło wystarczającą funkcjonalność przy jednocześniejszej prostocie konfiguracji wielomodułowego projektu.
 
-W ramach projektu cały proces programowania układów realizowano przy pomocy oprogramowania \texttt{avrdude} za pośrednictwem zewnętrznego programatora sprzętowego USBasp, wykorzystując funkcję \textit{Upload Using Programmer} (wgrywanie za pomocą programatora). Na potrzeby produkcji wielu egzemplarzy urządzeń brzegowych przygotowano autorski adapter sprzętowy wpięty do portu USB, wyposażony w profesjonalną podstawkę typu ZIF (ang. \textit{Zero Insertion Force}) z charakterystyczną dźwignią, co umożliwiło szybką i bezpieczną wymianę mikrokontrolerów bez ryzyka uszkodzenia pinów. Konstrukcja programatora oparta jest na przylutowaniu magistrali sygnałowej ISP (styki: 5\,V, GND, MOSI, MISO, RST, SCK) bezpośrednio do gniazda procesora, co zapewnia stabilny proces wgrywania wsadów binarnych bezpośrednio do pamięci Flash.
+W ramach projektu proces programowania układów realizowano za pośrednictwem wspomnianego wcześniej narzędzia \texttt{avrdude} oraz zewnętrznego programatora sprzętowego USBasp. Na potrzeby seryjnego przygotowania mikrokontrolerów opracowano dedykowany adapter wyposażony w gniazdo typu ZIF (ang. \textit{Zero Insertion Force}) z mechanizmem dźwigniowym. Rozwiązanie to umożliwiło szybką i bezpieczną wymianę układów brzegowych bez ryzyka uszkodzenia ich wyprowadzeń, zapewniając stabilne połączenie z programatorem.
 
 \section{Biblioteka komunikacji I$^2$C -- Wire.h}
 Wire.h \cite{arduino_wire} jest standardową biblioteką środowiska Arduino, realizującą obsługę protokołu I$^2$C (\textit{Inter-Integrated Circuit}) za pośrednictwem wbudowanego sprzętowego kontrolera TWI mikrokontrolera ATmega328P. Biblioteka przejmuje zarządzanie rejestrami taktowania przesyłu, przerwaniami oraz identyfikacją sprzętową sygnałów potwierdzających komunikację (ACK/NACK).
 
-Protokół I$^2$C został wybrany jako magistrala komunikacyjna systemu ze względu na minimalizację wymaganego okablowania --- do połączenia dowolnej liczby urządzeń wystarczają zaledwie dwie linie sygnałowe (SDA i SCL) oraz wspólne zasilanie. W porównaniu z alternatywami, takimi jak SPI (wymagający dodatkowej linii CS dla każdego urządzenia) czy UART (ograniczony do komunikacji punkt-punkt), I$^2$C stanowi optymalny kompromis między prostotą połączeń a skalowalnością systemu rozproszonego.
+Protokół I$^2$C został wybrany jako magistrala komunikacyjna systemu ze względu na minimalizację liczby wymaganych połączeń sygnałowych --- do połączenia dowolnej liczby urządzeń wystarczają zaledwie dwie linie sygnałowe (SDA i SCL) oraz wspólne zasilanie. W porównaniu z alternatywami, takimi jak SPI (wymagający dodatkowej linii CS dla każdego urządzenia) czy UART, I$^2$C stanowi optymalny kompromis między prostotą połączeń a skalowalnością. Co istotne, protokół UART jest interfejsem asynchronicznym, co przy braku zewnętrznego oscylatora kwarcowego i pracy na wewnętrznym oscylatorze RC mogłoby prowadzić do błędów synchronizacji ramek przy wahaniach temperatury. Magistrala I$^2$C, jako interfejs synchroniczny (wykorzystujący linię zegarową SCL), jest niewrażliwa na niedokładności taktowania mikrokontrolerów.
 
 W projekcie biblioteka \texttt{Wire.h} stanowi fundament autorskiej biblioteki \texttt{ModuleComms}, realizując fizyczną warstwę transportową komunikacji między jednostką Master a modułami Slave.
 
@@ -309,12 +300,12 @@ Rodzina bibliotek Adafruit obejmuje \texttt{Adafruit\_GFX} \cite{Adafruit-GFX-Li
 
 Biblioteki te wybrano ze względu na ich szeroką kompatybilność z ekosystemem Arduino, aktywne wsparcie społeczności oraz zoptymalizowane algorytmy rysowania, dostosowane do ograniczeń pamięciowych mikrokontrolerów 8-bitowych. Alternatywna biblioteka \texttt{U8g2lib}, choć oferuje podobną funkcjonalność, wykazuje większe zapotrzebowanie na pamięć SRAM, co stanowi istotne ograniczenie na platformie ATmega328P dysponującej zaledwie 2\,KB tego zasobu.
 
-W projekcie biblioteki Adafruit wykorzystano w modułach Labyrinth oraz Radio do obsługi monochromatycznych wyświetlaczy OLED o rozdzielczości 128x64 pikseli. Warstwa \texttt{Adafruit\_GFX} umożliwia rysowanie prymitywów graficznych (prostokątów, okręgów, glifów tekstowych) oraz renderowanie bitmap przechowywanych w pamięci Flash za pośrednictwem dyrektywy \texttt{PROGMEM}, co pozwala na obsługę dużych zasobów graficznych bez obciążania ograniczonej pamięci SRAM.
+W projekcie biblioteki Adafruit wykorzystano w modułach labiryntu oraz radiowym do obsługi monochromatycznych wyświetlaczy OLED o rozdzielczości 128x64 pikseli. Warstwa \texttt{Adafruit\_GFX} umożliwia rysowanie prymitywów graficznych (prostokątów, okręgów, glifów tekstowych) oraz renderowanie bitmap przechowywanych w pamięci Flash za pośrednictwem dyrektywy \texttt{PROGMEM}, co pozwala na obsługę dużych zasobów graficznych bez obciążania ograniczonej pamięci SRAM.
 
 \section{Biblioteka wyświetlacza LiquidCrystal}
-LiquidCrystal\_I2C jest modyfikacją oficjalnej biblioteki \texttt{LiquidCrystal} środowiska Arduino, rozszerzoną o obsługę komunikacji przez magistralę I$^2$C za pośrednictwem ekspandera portów PCF8574. W tradycyjnym ujęciu, panel LCD wymaga podłączenia do 6 przewodów sygnałowych, trwale rezerwujących cyfrowe piny mikrokontrolera. Zastosowanie konwertera I$^2$C redukuje tę liczbę do dwóch linii współdzielonych z pozostałymi urządzeniami na magistrali.
+Biblioteka \texttt{LiquidCrystal} \cite{arduino_liquid_crystal} jest standardowym narzędziem środowiska Arduino służącym do obsługi wyświetlaczy alfanumerycznych opartych na sterowniku Hitachi HD44780. Pozwala ona na komunikację z panelem LCD w trybie 4-bitowym lub 8-bitowym, co umożliwia elastyczne zarządzanie zasobami sprzętowymi mikrokontrolera.
 
-Wybór wariantu I$^2$C tej biblioteki wynikał bezpośrednio z architektury systemu --- moduł arytmetyczny, w którym jest ona wykorzystywana, korzysta już z magistrali I$^2$C do komunikacji z jednostką nadrzędną. Dodanie wyświetlacza LCD na tę samą szynę wymagało jedynie zmiany adresu urządzenia, bez zajmowania dodatkowych pinów mikrokontrolera. W ramach projektu biblioteka służy do wyświetlania treści zadań matematycznych oraz wprowadzanych przez użytkownika odpowiedzi na panelu alfanumerycznym LCD 16x2.
+W projekcie wykorzystano tryb 4-bitowy, który wymaga podłączenia sześciu linii sygnałowych (RS, EN oraz cztery linie danych). Choć rozwiązanie to zajmuje więcej pinów mikrokontrolera niż alternatywne interfejsy szeregowe, zapewnia ono najwyższą wydajność odświeżania oraz pełną kompatybilność z podstawowymi bibliotekami bez konieczności stosowania dodatkowych układów pośredniczących, takich jak ekspandery I$^2$C. Wybór ten był możliwy dzięki rezygnacji z innych peryferiów w module arytmetycznym (klawiaturze), co pozostawiło wystarczającą liczbę wolnych wyprowadzeń ATmega328P. W ramach projektu biblioteka służy do wyświetlania treści zadań matematycznych oraz wprowadzanych przez użytkownika odpowiedzi na panelu LCD 16x2.
 
 \section{Biblioteka TM1637Display}
 TM1637Display \cite{TM1637Display} jest biblioteką obsługującą sprzętowy sterownik TM1637, stosowany w poczwórnych wyświetlaczach 7-segmentowych. Sterownik ten wykorzystuje dwuprzewodowy protokół komunikacyjny zbliżony koncepcyjnie do I$^2$C, lecz wymagający dedykowanych linii CLK i DIO.
@@ -323,10 +314,10 @@ Decyzja o zastosowaniu wyświetlacza TM1637 w jednostce nadrzędnej, zamiast np.
 
 W projekcie wyświetlacz TM1637 pełni rolę głównego wskaźnika upływającego czasu gry w formacie MM:SS, informując uczestników o zbliżającym się jego końcu.
 
-\section{Biblioteka interfejsu SPI -- SPI.h}
+\section{Biblioteka interfejsu SPI}
 SPI.h jest standardową biblioteką środowiska Arduino, realizującą obsługę protokołu \textit{Serial Peripheral Interface} (SPI). Interfejs ten umożliwia szybką, synchroniczną komunikację szeregową z peryferiami za pośrednictwem czterech linii sygnałowych: MOSI (\textit{Master Out Slave In}), MISO (\textit{Master In Slave Out}), SCK (\textit{Serial Clock}) oraz CS (\textit{Chip Select}).
 
-Protokół SPI został zastosowany w module Labyrinth zamiast I$^2$C ze względu na znacząco wyższą przepustowość, niezbędną do wydajnego przesyłania buforów ramki obrazu o rozmiarze 1\,KB (128x64 pikseli monochromatycznych) do wyświetlacza OLED. Przesyłanie tej ilości danych przez magistralę I$^2$C, współdzieloną z komunikacją systemową, mogłoby negatywnie wpłynąć na responsywność całego systemu.
+Protokół SPI został zastosowany w module labiryntu zamiast I$^2$C z dwóch kluczowych powodów. Po pierwsze, magistrala SPI oferuje znacząco wyższą przepustowość, niezbędną do wydajnego przesyłania pełnych buforów ramki obrazu (1\,KB) do wyświetlacza OLED bez blokowania pętli głównej. Po drugie, mikrokontrolery ATmega328P posiadają tylko jeden sprzętowy interfejs I$^2$C, który w tym module jest już wykorzystywany do pracy w trybie Slave na potrzeby komunikacji systemowej. Jednoczesna obsługa wyświetlacza jako Master na tej samej magistrali byłaby programowo i sprzętowo nieefektywna, wymagając ciągłego i ryzykownego przełączania trybów pracy kontrolera TWI.
 
 \chapter{Implementacja}
 W niniejszym rozdziale opisano praktyczną realizację założeń projektowych systemu. Nacisk położono na architekturę oprogramowania, implementację autorskiego protokołu komunikacyjnego, zastosowany wzorzec wielozadaniowości kooperatywnej oraz szczegółową budowę poszczególnych modułów zagadek. Dla każdego komponentu przedstawiono kluczowe fragmenty kodu źródłowego wraz z uzasadnieniem przyjętych rozwiązań programistycznych.
@@ -337,7 +328,7 @@ Zaprojektowany system obwodu logiki gry operuje na płaszczyźnie architektury s
 \section{Autorska biblioteka komunikacyjna ModuleComms}
 Biblioteka \texttt{ModuleComms} powstała, aby ujednolicić obsługę komunikacji I$^2$C i uniknąć powielania kodu. Bez niej każdy moduł musiałby samodzielnie zarządzać buforowaniem danych i dekodowaniem ramek protokołu. Biblioteka przejmuje te zadania, oferując programiście gotowe funkcje do sprawdzania stanu modułów i obsługi logiki gry.
 
-W protokole komunikacyjnym każde polecenie i każdy status to pojedynczy bajt w notacji szesnastkowej. Komendy wywołujące akcję po stronie serwera to np. \texttt{CMD\_START\_GAME} czy \texttt{CMD\_IDENTIFY}, a flagi stanu modułu to \texttt{STATUS\_UNSOLVED}, \texttt{STATUS\_PASSED} i \texttt{STATUS\_FAILED}. Dzięki temu zamiast przesyłać przez magistralę pełne tekstowe identyfikatory poleceń wystarczy pojedynczy bajt --- co zmniejsza liczbę przesyłanych danych i zwiększa przepustowość komunikacji.
+W protokole komunikacyjnym każde polecenie i każdy status to pojedynczy bajt. Komendy wywołujące akcję po stronie serwera to np. \texttt{CMD\_START\_GAME} czy \texttt{CMD\_IDENTIFY}, a flagi stanu modułu to \texttt{STATUS\_UNSOLVED}, \texttt{STATUS\_PASSED} i \texttt{STATUS\_FAILED}. Dzięki temu zamiast przesyłać przez magistralę pełne tekstowe identyfikatory poleceń wystarczy pojedynczy bajt --- co zmniejsza liczbę przesyłanych danych i zwiększa przepustowość komunikacji.
 \begin{lstlisting}[language=C++, caption={Definicje protokołu transportowego I$^2$C w bibliotece ModuleComms}]
 #define CMD_START_GAME            0x01
 #define CMD_END_GAME              0x02
@@ -383,7 +374,7 @@ private:
 
 Dzięki takiej architekturze \texttt{Master} nie musi znać szczegółów działania poszczególnych modułów. Każdy z nich jest traktowany jako „czarna skrzynka”, która zwraca jedynie informację o swoim stanie: sukces, błąd lub oczekiwanie.
 
-Integracja modułu z biblioteką polega na przekazaniu dwóch funkcji: \texttt{gameLoopFn} (logika zagadki) oraz \texttt{resetStateFn} (powrót do stanu początkowego). Jest to realizacja wzorca inwersji sterowania (\textit{Inversion of Control}) --- moduł dostarcza kod, a biblioteka decyduje o momencie jego wywołania. Programista musi jedynie wywołać \texttt{slave.slaveLoop()} w głównej pętli Arduino.
+Integracja modułu z biblioteką polega na przekazaniu dwóch funkcji: \texttt{gameLoopFn} (logika zagadki) oraz \texttt{resetStateFn} (powrót do stanu początkowego). Jest to realizacja wzorca odwrócenia sterowania (ang. \textit{Inversion of Control}) --- moduł dostarcza kod, a biblioteka decyduje o momencie jego wywołania. Programista musi jedynie wywołać \texttt{slave.slaveLoop()} w głównej pętli Arduino.
 
 \begin{lstlisting}[language=C++, caption={Uproszczona definicja interfejsu polimorficznego do węzłów łamigłówek (ModuleComms.h)}]
 typedef void (*GameLoop)();
@@ -423,7 +414,7 @@ Aby zagwarantować pełną responsywność systemu i uniknąć kolizji na magist
 
 \section{Implementacja obwodów i modułów wbudowanych}
 \subsection{Moduł nadrzędny}
-Jednostka nadrzędna stanowi centralny punkt decyzyjny całego omawianego systemu. Jako jedyna z peryferiów, nie implementuje ona podrzędnego interfejsu zagadek, lecz służy za główny zegar odliczający i dystrybutor globalnych ustawień gry. Fizyczny sprzęt centrali rozbudowano o poczwórny wyświetlacz 7-segmentowy (\texttt{TM1637}), pełniący rolę głównego wskaźnika czasu, oraz dodatkowy, 2-cyfrowy wyświetlacz 7-segmentowy obsługiwany przez rejestry przesuwne. Ten drugi służy do prezentacji wylosowanego ziarna pseudolosowości (zmiennej \texttt{version}), determinującego logikę pozostałych modułów. Interfejs wyposażono również w przycisk Start, przełącznik dźwigniowy oraz przetwornik piezoelektryczny (buzzer) do sygnalizacji dźwiękowej.
+Stacja nadrzędna stanowi centralny punkt decyzyjny całego omawianego systemu. Jako jedyna z peryferiów, nie implementuje ona podrzędnego interfejsu zagadek, lecz służy za główny zegar odliczający i dystrybutor globalnych ustawień gry. Stacja nadrzędna została rozbudowana o poczwórny wyświetlacz 7-segmentowy (\texttt{TM1637}), pełniący rolę głównego wskaźnika czasu, oraz dodatkowy, 2-cyfrowy wyświetlacz 7-segmentowy obsługiwany przez rejestry przesuwne. Ten drugi służy do prezentacji wylosowanego ziarna pseudolosowości (zmiennej \texttt{version}), determinującego logikę pozostałych modułów. Interfejs wyposażono również w przycisk Start, przełącznik dźwigniowy oraz przetwornik piezoelektryczny (buzzer) do sygnalizacji dźwiękowej.
 
 Mikrokontroler reguluje tempo narastających ostrzeżeń dźwiękowych. Stabilność tego modułu opiera się na nieblokującej funkcji \texttt{handleBeeps()}, której algorytm wyznacza odstępy między sygnałami w oparciu o różnicę między pozostałym czasem gry a progiem krytycznym (\texttt{steadyBeepThreshold}). Gdy rezerwa czasu spadnie poniżej progu, sygnał staje się ciągły. Wykorzystano do tego wartość zmiennoprzecinkową \texttt{progress}, która estymuje wymagany sukcesywny spadek interwału \texttt{beepInterval}. Dzięki rezygnacji z instrukcji \texttt{delay()}, Master zachowuje pełną responsywność na pakiety przychodzące z magistrali I$^2$C.
 
@@ -494,7 +485,7 @@ void checkModules() {
 }
 \end{lstlisting}
 
-Główna logika sterownika Master znajduje się w pętli \texttt{loop()}. Gdy gra trwa (\texttt{isGameInProgress}), system zarządza czterema kluczowymi zadaniami: odliczaniem czasu (\texttt{updateGameTimer()}), sygnalizacją dźwiękową (\texttt{handleBeeps()}), obsługą diody błędu (\texttt{handleMistakeBlinking()}) oraz cyklicznym sprawdzaniem statusu podłączonych urządzeń. Funkcja \texttt{handleMistakeBlinking()} informuje o liczbie błędów poprzez serię błyśnięć czerwonej diody LED powtarzaną co 5 sekund. W przypadku wykrycia awarii modułu, Master uruchamia procedurę \texttt{handleFailure()}, która sygnalizuje błąd dźwiękiem i resetuje dany moduł, pozwalając na ponowne rozwiązanie zagadki. Skompilowany program zajmuje 10106 bajtów (31\%) pamięci Flash oraz 964 bajty (47\%) pamięci SRAM.
+Główna logika sterownika Master znajduje się w pętli \texttt{loop()}. Gdy gra trwa (\texttt{isGameInProgress}), system zarządza czterema kluczowymi zadaniami: odliczaniem czasu (\texttt{updateGameTimer()}), sygnalizacją dźwiękową (\texttt{handleBeeps()}), obsługą diody błędu (\texttt{handleMistakeBlinking()}) oraz cyklicznym sprawdzaniem statusu podłączonych urządzeń. Funkcja \texttt{handleMistakeBlinking()} informuje o liczbie błędów poprzez serię błyśnięć czerwonej diody LED powtarzaną co 5 sekund. W przypadku wykrycia awarii modułu, Master uruchamia procedurę \texttt{handleFailure()}, która sygnalizuje błąd dźwiękiem i resetuje dany moduł, pozwalając na ponowne rozwiązanie zagadki.
 
 \begin{lstlisting}[language=C++, caption={Główna pętla sterująca jednostki nadrzędnej (Master.ino)}]
 void loop() {
@@ -560,9 +551,7 @@ const RadioTarget targets[] = {
 };
 \end{lstlisting}
 
-Skompilowany program dla tego modułu zajmuje 15326 bajtów (47\%) pamięci Flash oraz 692 bajty (33\%) pamięci SRAM. Taki podział zasobów gwarantuje stabilną pracę układu ATmega328P nawet przy intensywnej komunikacji na magistrali I$^2$C.
-
-\subsection{Moduł labiryntu} Stanowi przestrzenną łamigłówkę nawigacyjną, w której gracz porusza się wewnątrz wirtualnego labiryntu za pomocą trzech przycisków (ruch na wprost oraz obroty w prawo lub w lewo). Interfejs graficzny oparto na wyświetlaczu OLED 128x64 pikseli. Co istotne, w przeciwieństwie do innych modułów, system ten komunikuje się z ekranem za pomocą szybkiej magistrali SPI (piny \texttt{MOSI}, \texttt{CLK}, \texttt{CS}, \texttt{DC}, \texttt{RST}). Wybór tego standardu zamiast I$^2$C podyktowany był dwoma czynnikami: wyższą przepustowością niezbędną do odświeżania pełnoekranowych bitmap oraz uniknięciem konfliktu na jedynym sprzętowym interfejsie I$^2$C mikrokontrolera, który musi pracować w trybie Slave na potrzeby komunikacji systemowej.
+\subsection{Moduł labiryntu} Stanowi przestrzenną łamigłówkę nawigacyjną, w której gracz porusza się wewnątrz wirtualnego labiryntu za pomocą trzech przycisków (ruch na wprost oraz obroty w prawo lub w lewo). Interfejs graficzny oparto na wyświetlaczu OLED 128x64 pikseli. Co istotne, w przeciwieństwie do innych modułów, system ten komunikuje się z ekranem za pomocą szybkiej magistrali SPI (piny \texttt{MOSI}, \texttt{CLK}, \texttt{CS}, \texttt{DC}, \texttt{RST}). Wybór tego standardu zamiast I$^2$C podyktowany był nie tylko wyższą przepustowością niezbędną do odświeżania pełnoekranowych bitmap, ale przede wszystkim ograniczeniem sprzętowym mikrokontrolera. ATmega328P posiada tylko jeden interfejs I$^2$C, który w tym przypadku musi stale pracować w trybie Slave, by odbierać komendy od Mastera. Równoczesne pełnienie roli Mastera dla wyświetlacza byłoby na tym układzie praktycznie niemożliwe.
 
 Logika modułu opiera się na współdzieleniu funkcji \texttt{canMove()} zarówno do walidacji przemieszczeń gracza, jak i do dynamicznego generowania rzutu perspektywicznego. Sercem koordynacji jest funkcja \texttt{gameLoop()}, która w sposób nieblokujący zarządza stanem wejść i wyjść.
 
@@ -636,7 +625,7 @@ void gameLoop() {
 }
 \end{lstlisting}
 
-Implementacja ta pozwala na zachowanie ciągłej łączności z jednostką Master przy jednoczesnej obsłudze animacji diod oraz sygnałów dźwiękowych. Program zajmuje jedynie 7812 bajtów (24\%) pamięci Flash oraz 480 bajtów (23\%) pamięci SRAM, co gwarantuje stabilną pracę układu bez ryzyka przepełnienia pamięci operacyjnej.
+Implementacja ta pozwala na zachowanie ciągłej łączności z jednostką Master przy jednoczesnej obsłudze animacji diod oraz sygnałów dźwiękowych.
 
 \begin{lstlisting}[language=C++, caption={Dynamiczne przypisywanie układu klawiszy w zależności od liczby błędów (SimonSays.ino)}]
 int mapColorByMistakes(int shownColor, uint8_t mistakeCount) {
@@ -720,9 +709,6 @@ char scanKeypad() {
 }
 \end{lstlisting}
 
-Implementacja modułu zajmuje 9344 bajty (28\%) pamięci Flash oraz 692 bajty (33\%) pamięci SRAM. Zrezygnowano z bibliotek blokujących (\texttt{delay}), co zapewnia płynną współpracę z magistralą I$^2$C i jednostką Master nawet podczas oczekiwania na wprowadzenie przez gracza kolejnych cyfr wyniku.
-
-
 \subsection{Moduł z przełącznikiem} Stanowi prostą, lecz wymagającą precyzji zagadkę, w której zadaniem gracza jest wykonanie właściwej akcji na fizycznym przełączniku dźwigniowym w oparciu o aktualny kolor podświetlenia diody RGB. W zależności od koloru i numeru wersji rozgrywki (\texttt{version}), moduł oczekuje jednej z dwóch akcji: szybkiego przełączenia (\textit{Click}) lub przytrzymania przełącznika (\textit{Hold}) do momentu wystąpienia konkretnej cyfry na liczniku głównym.
 
 Koordynację stanów modułu realizuje funkcja \texttt{gameLoop()}, która monitoruje fizyczny stan pinu wejściowego i w zależności od wybranego trybu wywołuje procedury przetwarzające czas trwania interakcji.
@@ -766,11 +752,6 @@ ActionType determineAction(ColorId color, uint8_t version) {
 }
 \end{lstlisting}
 
-Moduł ten cechuje się najmniejszym zapotrzebowaniem na zasoby w całym systemie ze względu na brak wyświetlaczy graficznych. Skompilowany program zajmuje 5452 bajty (16\%) pamięci Flash oraz 545 bajtów (26\%) pamięci SRAM.
-
-
-
-
 \chapter{Testy i działanie systemu}
 Celem testów było sprawdzenie poprawności komunikacji I$^2$C, niezawodności logiki modułów oraz efektywności wykorzystania pamięci mikrokontrolerów ATmega328P. Analiza wyników potwierdziła spełnienie wymagań funkcjonalnych i niefunkcjonalnych.
 
@@ -781,7 +762,7 @@ Dodatkowym narzędziem diagnostycznym wykorzystywanym podczas prac nad prototype
 Uzupełnieniem weryfikacji kompilacyjnej były testy integracyjne przeprowadzone na fizycznym prototypie systemu:
 \begin{itemize}
   \item \textbf{Walidacja wydajności kanału I$^2$C:} Testy z udziałem wszystkich 5 modułów Slave przy taktowaniu 100\,kHz potwierdziły stabilność komunikacji. Sekwencyjne odpytywanie przez jednostkę Master nie powodowało utraty danych ani błędów w przesyłanych ramkach protokołu \texttt{ModuleComms}.
-  \item \textbf{Pomiar zużycia pamięci:} Wykorzystanie pamięci Flash i SRAM utrzymano na bezpiecznym poziomie dzięki alokacji danych statycznych w pamięci programu (dyrektywa \texttt{PROGMEM}). Przykładowo, moduł Labiryntu wykorzystuje ok. 46\% pamięci Flash i 39\% SRAM.
+  \item \textbf{Pomiar zużycia pamięci:} Wykorzystanie pamięci Flash i SRAM utrzymano na bezpiecznym poziomie dzięki alokacji danych statycznych w pamięci programu (dyrektywa \texttt{PROGMEM}).
 \end{itemize}
 
 \section{Analiza wykorzystania zasobów sprzętowych}
@@ -828,7 +809,7 @@ Przeprowadzone testy potwierdziły poprawność przyjętych założeń projektow
 
 
 \chapter{Podsumowanie i wnioski}
-Celem pracy było zaprojektowanie modularnego systemu zadań logicznych na mikrokontrolerach ATmega328P. Projekt potwierdził, że architektura Master-Slave i magistrala I$^2$C pozwalają na stworzenie stabilnego i skalowalnego systemu. Oprogramowanie umożliwia koordynację wielu modułów przy zachowaniu płynności interfejsu.
+Celem pracy było zaprojektowanie modularnego systemu zadań logicznych na mikrokontrolerach ATmega328P. Projekt potwierdził, że architektura nadrzędno-podrzędna (ang. \textit{Master-Slave}) i magistrala I$^2$C pozwalają na stworzenie stabilnego i skalowalnego systemu. Oprogramowanie umożliwia koordynację wielu modułów przy zachowaniu płynności interfejsu.
 
 Projekt wykazał znaczenie optymalizacji pamięci (2\,KB SRAM). Wykorzystanie pamięci Flash (\texttt{PROGMEM}) oraz lekkiego protokołu komunikacyjnego pozwoliło na realizację złożonych zadań bez przekraczania limitów sprzętowych.
 
@@ -843,6 +824,11 @@ Głównym wyzwaniem technicznym okazało się zapewnienie stabilności sygnału 
   \emph{Arduino Language Reference (C++)},
   Dokumentacja języka i struktury programowania środowiska Arduino IDE, opartego o C/C++,
   \url{https://www.arduino.cc/reference/en/}.
+  \bibitem{arduino_liquid_crystal}
+  Arduino,
+  \emph{LiquidCrystal Library - API Documentation},
+  Biblioteka referencyjna obsługi wyświetlaczy alfanumerycznych LCD (standard HD44780),
+  \url{https://www.arduino.cc/reference/en/libraries/liquidcrystal/}.
   \bibitem{arduino_wire}
   Arduino,
   \emph{Wire Library - API Documentation},
