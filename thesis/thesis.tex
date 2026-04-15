@@ -329,7 +329,8 @@ Zaprojektowany system obwodu logiki gry operuje na płaszczyźnie architektury s
 Biblioteka \texttt{ModuleComms} powstała, aby ujednolicić obsługę komunikacji I$^2$C i uniknąć powielania kodu. Bez niej każdy moduł musiałby samodzielnie zarządzać buforowaniem danych i dekodowaniem ramek protokołu. Biblioteka przejmuje te zadania, oferując programiście gotowe funkcje do sprawdzania stanu modułów i obsługi logiki gry.
 
 W protokole komunikacyjnym każde polecenie i każdy status to pojedynczy bajt. Komendy wywołujące akcję po stronie serwera to np. \texttt{CMD\_START\_GAME} czy \texttt{CMD\_IDENTIFY}, a flagi stanu modułu to \texttt{STATUS\_UNSOLVED}, \texttt{STATUS\_PASSED} i \texttt{STATUS\_FAILED}. Dzięki temu zamiast przesyłać przez magistralę pełne tekstowe identyfikatory poleceń wystarczy pojedynczy bajt --- co zmniejsza liczbę przesyłanych danych i zwiększa przepustowość komunikacji.
-\begin{lstlisting}[language=C++, caption={Definicje protokołu transportowego I$^2$C w bibliotece ModuleComms}]
+Listing~\ref{lst:modulecomms-protocol-defs} prezentuje komplet kodów komend i statusów używanych przez warstwę transportową biblioteki.
+\begin{lstlisting}[language=C++, caption={Definicje protokołu transportowego I$^2$C w bibliotece ModuleComms}, label={lst:modulecomms-protocol-defs}]
 #define CMD_START_GAME            0x01
 #define CMD_END_GAME              0x02
 #define CMD_GET_STATUS            0x03
@@ -350,7 +351,8 @@ Biblioteka udostępnia dwie główne klasy: \texttt{Master} --- dla jednostki na
 
 Klasa \texttt{Master} odpowiada za koordynację systemu: skanuje magistralę w poszukiwaniu modułów (\texttt{discoverModules()}), przesyła pozostały czas gry (\texttt{sendRemainingSeconds()}) oraz rozgłasza liczbę błędów (\texttt{broadcastMistakeCount()}). Wykaz adresów modułów przechowywany jest w tablicy, co eliminuje potrzebę dynamicznej alokacji pamięci.
 
-\begin{lstlisting}[language=C++, caption={Interfejs główny platformy nadzorującej (ModuleComms.h)}]
+Listing~\ref{lst:modulecomms-master-interface} pokazuje publiczny interfejs klasy \texttt{Master}, odpowiedzialnej za orkiestrację rozgrywki.
+\begin{lstlisting}[language=C++, caption={Interfejs główny platformy nadzorującej (ModuleComms.h)}, label={lst:modulecomms-master-interface}]
 class Master {
 public:
     Master(uint8_t version);
@@ -376,7 +378,8 @@ Dzięki takiej architekturze \texttt{Master} nie musi znać szczegółów dział
 
 Integracja modułu z biblioteką polega na przekazaniu dwóch funkcji: \texttt{gameLoopFn} (logika zagadki) oraz \texttt{resetStateFn} (powrót do stanu początkowego). Jest to realizacja wzorca odwrócenia sterowania (ang. \textit{Inversion of Control}) --- moduł dostarcza kod, a biblioteka decyduje o momencie jego wywołania. Programista musi jedynie wywołać \texttt{slave.slaveLoop()} w głównej pętli Arduino.
 
-\begin{lstlisting}[language=C++, caption={Uproszczona definicja interfejsu polimorficznego do węzłów łamigłówek (ModuleComms.h)}]
+Listing~\ref{lst:modulecomms-slave-interface} zawiera uproszczony interfejs klasy \texttt{Slave} wraz z funkcjami zwrotnymi.
+\begin{lstlisting}[language=C++, caption={Uproszczona definicja interfejsu polimorficznego do węzłów łamigłówek (ModuleComms.h)}, label={lst:modulecomms-slave-interface}]
 typedef void (*GameLoop)();
 typedef void (*ResetState)();
 
@@ -418,7 +421,8 @@ Stacja nadrzędna stanowi centralny punkt decyzyjny całego omawianego systemu. 
 
 Mikrokontroler reguluje tempo narastających ostrzeżeń dźwiękowych. Stabilność tego modułu opiera się na nieblokującej funkcji \texttt{handleBeeps()}, której algorytm wyznacza odstępy między sygnałami w oparciu o różnicę między pozostałym czasem gry a progiem krytycznym (\texttt{steadyBeepThreshold}). Gdy rezerwa czasu spadnie poniżej progu, sygnał staje się ciągły. Wykorzystano do tego wartość zmiennoprzecinkową \texttt{progress}, która estymuje wymagany sukcesywny spadek interwału \texttt{beepInterval}. Dzięki rezygnacji z instrukcji \texttt{delay()}, Master zachowuje pełną responsywność na pakiety przychodzące z magistrali I$^2$C.
 
-\begin{lstlisting}[language=C++, caption={Nieblokująca obsługa przyspieszonego upływu czasu ostrzegawczego (Master.ino)}]
+Listing~\ref{lst:master-handlebeeps} przedstawia implementację funkcji \texttt{handleBeeps()}, która dynamicznie skraca interwał sygnałów ostrzegawczych.
+\begin{lstlisting}[language=C++, caption={Nieblokująca obsługa przyspieszonego upływu czasu ostrzegawczego (Master.ino)}, label={lst:master-handlebeeps}]
 void handleBeeps() {
   if (millis() - lastBeepTime >= beepInterval) {
     beep();
@@ -438,7 +442,8 @@ void handleBeeps() {
 
 Ważnym elementem zabezpieczającym obsługę przełącznika jest funkcja \texttt{handle\allowbreak Switch()}. Aby zapobiec przypadkowemu przerwaniu rozgrywki, wdrożono mechanizm potwierdzenia resetu. Operator (wyłącznie w celach diagnostycznych) musi trzykrotnie przełączyć dźwignię w krótkim odstępie czasu, zdefiniowanym przez \texttt{SWITCH\_RESET\_TIMEOUT}, aby wywołać procedurę \texttt{resetGame()} i przywrócić system do stanu gotowości.
 
-\begin{lstlisting}[language=C++, caption={Programowe ubezpieczenie przed przypadkowym restartem gry z licznikiem czasowym operacji (Master.ino)}]
+Listing~\ref{lst:master-handleswitch} ilustruje licznik okna czasowego używany do bezpiecznego potwierdzania resetu.
+\begin{lstlisting}[language=C++, caption={Programowe ubezpieczenie przed przypadkowym restartem gry z licznikiem czasowym operacji (Master.ino)}, label={lst:master-handleswitch}]
 void handleSwitch() {
   bool currentSwitchState = (digitalRead(SWITCH_PIN) == LOW);
   if (currentSwitchState != isSwitchOn) {
@@ -466,7 +471,8 @@ void handleSwitch() {
 
 Kluczowa dla przebiegu gry jest funkcja \texttt{checkModules()}, która odpowiada za sprawdzenie warunków zwycięstwa lub porażki. Master sekwencyjnie pobiera statusy ze wszystkich zarejestrowanych modułów (\texttt{STATUS\_PASSED}, \texttt{STATUS\_FAILED} lub \texttt{STATUS\_UNSOLVED}). Na tej podstawie system decyduje, czy cała zagadka została rozwiązana, czy też należy zarejestrować błąd popełniony przez graczy.
 
-\begin{lstlisting}[language=C++, caption={Procedura odpytywania stacji na nasłuchu I$^2$C (Master.ino)}]
+Listing~\ref{lst:master-checkmodules} pokazuje pętlę odpytywania modułów i priorytetowe przechwytywanie stanu błędu.
+\begin{lstlisting}[language=C++, caption={Procedura odpytywania stacji na nasłuchu I$^2$C (Master.ino)}, label={lst:master-checkmodules}]
 void checkModules() {
   areAllModulesSolved = true;
   failedModuleIndex = -1;
@@ -487,7 +493,8 @@ void checkModules() {
 
 Główna logika sterownika Master znajduje się w pętli \texttt{loop()}. Gdy gra trwa (\texttt{isGameInProgress}), system zarządza czterema kluczowymi zadaniami: odliczaniem czasu (\texttt{updateGameTimer()}), sygnalizacją dźwiękową (\texttt{handleBeeps()}), obsługą diody błędu (\texttt{handleMistakeBlinking()}) oraz cyklicznym sprawdzaniem statusu podłączonych urządzeń. Funkcja \texttt{handleMistakeBlinking()} informuje o liczbie błędów poprzez serię błyśnięć czerwonej diody LED powtarzaną co 5 sekund. W przypadku wykrycia awarii modułu, Master uruchamia procedurę \texttt{handleFailure()}, która sygnalizuje błąd dźwiękiem i resetuje dany moduł, pozwalając na ponowne rozwiązanie zagadki.
 
-\begin{lstlisting}[language=C++, caption={Główna pętla sterująca jednostki nadrzędnej (Master.ino)}]
+Listing~\ref{lst:master-main-loop} przedstawia kompletną pętlę główną jednostki nadrzędnej z podziałem na zadania cykliczne.
+\begin{lstlisting}[language=C++, caption={Główna pętla sterująca jednostki nadrzędnej (Master.ino)}, label={lst:master-main-loop}]
 void loop() {
   handleSwitch();   // Odczyt statusu zasilania/restartu
   handleButton();   // Manualne uruchomienie po starcie
@@ -519,7 +526,8 @@ void loop() {
 
 Koordynację wszystkich systemów modułu — odświeżania ekranu, obsługi enkodera oraz generowania sygnałów świetlnych — realizuje funkcja \texttt{gameLoop()}. Jest ona wywoływana asynchronicznie przez bibliotekę komunikacyjną, co pozwala na zachowanie responsywności węzła przy jednoczesnym wykonywaniu logiki gry.
 
-\begin{lstlisting}[language=C++, caption={Główna pętla logiczna modułu radiowego (Radio.ino)}]
+Listing~\ref{lst:radio-gameloop} pokazuje kolejność wywołań funkcji odpowiedzialnych za logikę modułu radiowego.
+\begin{lstlisting}[language=C++, caption={Główna pętla logiczna modułu radiowego (Radio.ino)}, label={lst:radio-gameloop}]
 void gameLoop() {
     // Pierwszorzędne odświeżenie ekranu po inicjalizacji gry
     if (needsInitialRender) {
@@ -534,7 +542,8 @@ void gameLoop() {
 
 Zastosowany model programowania opiera się na maszynie stanów i nieblokujących licznikach \texttt{millis()}, dzięki czemu animacja diody LED nie wstrzymuje pracy procesora. Kluczowym wyzwaniem implementacyjnym była optymalizacja pamięci SRAM, na którą duży wpływ ma sterownik wyświetlacza OLED (rezerwujący dynamicznie 1024 bajty na bufor ramki). Aby uniknąć przepełnienia stosu, wszystkie definicje słów i częstotliwości zostały przeniesione do nieulotnej pamięci programu.
 
-\begin{lstlisting}[language=C++, caption={Deklaracja haseł telegraficznych i częstotliwości w pamięci Flash (Radio.ino)}]
+Listing~\ref{lst:radio-progmem-targets} prezentuje strukturę danych \texttt{RadioTarget} oraz deklaracje \texttt{PROGMEM} użyte do oszczędzania pamięci SRAM.
+\begin{lstlisting}[language=C++, caption={Deklaracja haseł telegraficznych i częstotliwości w pamięci Flash (Radio.ino)}, label={lst:radio-progmem-targets}]
 const char m_0[] PROGMEM = "... .... . .-.. .-..";
 // [...]
 const char m_15[] PROGMEM = "-... . .- - ...";
@@ -555,7 +564,8 @@ const RadioTarget targets[] = {
 
 Logika modułu opiera się na współdzieleniu funkcji \texttt{canMove()} zarówno do walidacji przemieszczeń gracza, jak i do dynamicznego generowania rzutu perspektywicznego. Sercem koordynacji jest funkcja \texttt{gameLoop()}, która w sposób nieblokujący zarządza stanem wejść i wyjść.
 
-\begin{lstlisting}[language=C++, caption={Główna pętla logiczna modułu labiryntu (Labyrinth.ino)}]
+Listing~\ref{lst:labyrinth-gameloop} przedstawia nieblokującą obsługę wejść użytkownika i renderowania widoku labiryntu.
+\begin{lstlisting}[language=C++, caption={Główna pętla logiczna modułu labiryntu (Labyrinth.ino)}, label={lst:labyrinth-gameloop}]
 void gameLoop() {
   // Pierwszorzędne narysowanie widoku po starcie gry
   if (needsInitialRender) {
@@ -607,7 +617,8 @@ Kluczowym mechanizmem utrudniającym zadanie jest dynamiczne przypisywanie kolor
 
 Koordynacja stanów gry odbywa się wewnątrz funkcji \texttt{gameLoop()}, która w każdym cyklu procesora sprawdza aktualny etap rozgrywki i wywołuje odpowiednie procedury obsługi prezentacji sekwencji lub odczytu wejść.
 
-\begin{lstlisting}[language=C++, caption={Główna pętla logiczna modułu sekwencyjnego (SimonSays.ino)}]
+Listing~\ref{lst:simon-gameloop} ilustruje przejścia maszyny stanów pomiędzy fazami rundy modułu sekwencyjnego.
+\begin{lstlisting}[language=C++, caption={Główna pętla logiczna modułu sekwencyjnego (SimonSays.ino)}, label={lst:simon-gameloop}]
 void gameLoop() {
     switch (currentState) {
         case UNENGAGED:    handleUnengaged();    break;
@@ -627,7 +638,8 @@ void gameLoop() {
 
 Implementacja ta pozwala na zachowanie ciągłej łączności z jednostką Master przy jednoczesnej obsłudze animacji diod oraz sygnałów dźwiękowych.
 
-\begin{lstlisting}[language=C++, caption={Dynamiczne przypisywanie układu klawiszy w zależności od liczby błędów (SimonSays.ino)}]
+Listing~\ref{lst:simon-mapcolor} pokazuje reguły mapowania kolorów przycisków zależnie od liczby błędów globalnych.
+\begin{lstlisting}[language=C++, caption={Dynamiczne przypisywanie układu klawiszy w zależności od liczby błędów (SimonSays.ino)}, label={lst:simon-mapcolor}]
 int mapColorByMistakes(int shownColor, uint8_t mistakeCount) {
     if (shownColor < 0 || shownColor > 3) return shownColor;
 
@@ -649,7 +661,8 @@ int mapColorByMistakes(int shownColor, uint8_t mistakeCount) {
 
 Główna pętla gry \texttt{gameLoop()} zarządza stanem wyświetlacza, czasem oczekiwania po błędzie oraz interpretacją wejść z klawiatury.
 
-\begin{lstlisting}[language=C++, caption={Główna pętla logiczna modułu arytmetycznego (Keypad.ino)}]
+Listing~\ref{lst:keypad-gameloop} przedstawia przebieg pętli głównej modułu arytmetycznego wraz z kontrolą pauzy po błędzie.
+\begin{lstlisting}[language=C++, caption={Główna pętla logiczna modułu arytmetycznego (Keypad.ino)}, label={lst:keypad-gameloop}]
 void gameLoop() {
   // Obsługa wymuszonej pauzy po popełnieniu błędu
   if (waitingAfterMistake) {
@@ -676,7 +689,8 @@ void gameLoop() {
 
 Algorytm generuje zadania w dwóch trybach (ustalanych na podstawie globalnej zmiennej \texttt{version}): arytmetycznym (podstawowe działania matematyczne) oraz binarnym (konwersja liczb dziesiętnych na binarne). Wdrożenie obsługi wejścia wymagało precyzyjnego mechanizmu eliminowania drgań styków (ang. \textit{debouncing}), aby uniknąć rejestrowania wielokrotnych naciśnięć tego samego klawisza.
 
-\begin{lstlisting}[language=C++, caption={Nieblokujący odczyt klawiatury z programowym debouncingiem (Keypad.ino)}]
+Listing~\ref{lst:keypad-scankeypad} zawiera implementację programowego debouncera dla matrycy klawiatury.
+\begin{lstlisting}[language=C++, caption={Nieblokujący odczyt klawiatury z programowym debouncingiem (Keypad.ino)}, label={lst:keypad-scankeypad}]
 char scanKeypad() {
   char rawKey = scanRawKeypad(); // Odczyt sprzętowy matrycy
   unsigned long now = millis();
@@ -713,7 +727,8 @@ char scanKeypad() {
 
 Koordynację stanów modułu realizuje funkcja \texttt{gameLoop()}, która monitoruje fizyczny stan pinu wejściowego i w zależności od wybranego trybu wywołuje procedury przetwarzające czas trwania interakcji.
 
-\begin{lstlisting}[language=C++, caption={Główna pętla logiczna modułu z przełącznikiem (Switch.ino)}]
+Listing~\ref{lst:switch-gameloop} przedstawia logikę wyboru procedury \textit{Click}/\textit{Hold} w pętli modułu z przełącznikiem.
+\begin{lstlisting}[language=C++, caption={Główna pętla logiczna modułu z przełącznikiem (Switch.ino)}, label={lst:switch-gameloop}]
 void gameLoop() {
   // Inicjalizacja wyzwania przy starcie lub po resecie
   if (!challengeArmed) {
@@ -734,7 +749,8 @@ void gameLoop() {
 
 W przypadku akcji \textit{Hold}, dioda RGB zmienia kolor w momencie aktywacji przełącznika, podpowiadając graczowi moment zwolnienia dźwigni. Użytkownik musi puścić przełącznik w chwili, gdy ostatnia cyfra odliczanego przez Mastera czasu gry zgadza się z wartością przypisaną do danego koloru (np. cyfra 4 dla koloru niebieskiego).
 
-\begin{lstlisting}[language=C++, caption={Wyznaczanie poprawnej procedury działania w oparciu o stan gry (Switch.ino)}]
+Listing~\ref{lst:switch-determineaction} pokazuje reguły decyzyjne przypisujące akcję do kombinacji koloru i wersji rozgrywki.
+\begin{lstlisting}[language=C++, caption={Wyznaczanie poprawnej procedury działania w oparciu o stan gry (Switch.ino)}, label={lst:switch-determineaction}]
 ActionType determineAction(ColorId color, uint8_t version) {
     if (color == COLOR_GREEN) return ACTION_CLICK;
 
