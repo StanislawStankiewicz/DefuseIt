@@ -71,6 +71,23 @@ avrdude -c usbasp -p m328p -B 10 -U lfuse:w:0xE2:m
 - Add better button debouncing and post-fail lockout inside Simon Says.
 - Expand documentation for remaining modules (Cables, Symbols puzzles, etc.).
 
-For a standalone ATmega328P, the best strategy is to group your peripherals by their hardware "Ports" (Port B, Port C, and Port D). This prevents logic on one bus from accidentally triggering hardware flags on another.Since you are using I2C (Pins A4/A5) and Serial (Pins 0/1), the "safe" remaining zones are the middle of Port D and the top of Port B.Recommended Pin MappingPeripheralFunctionLogical Pin (Arduino)ATmega328P Physical PinWhy this pin?SerialRX / TX0 / 12 / 3Dedicated UART hardware.I2CSDA / SCLA4 / A527 / 28Dedicated TWI hardware.ButtonsLeft / Fwd / Right2, 3, 84, 5, 14Pin 2 & 3 support hardware interrupts if needed.VictoryOutputA023Moving this to Analog pins to free up Digital.OLED (SPI)CLK1319Hardware SC
+### Low-Level AVR Pin Planning Notes
 
-mozna o tym wspomniec w pracy bo calkiem low level
+For standalone ATmega328P builds, group peripherals by hardware ports (Port B, Port C, Port D) instead of assigning pins ad-hoc. This helps reduce cross-coupling bugs and makes register-level debugging easier.
+
+Given the fixed buses:
+
+- `I2C`: `A4`/`A5` (TWI hardware)
+- `UART`: `D0`/`D1` (hardware serial)
+
+the most practical remaining zones are mid `Port D` and upper `Port B`.
+
+| Peripheral | Function | Arduino Pin(s) | ATmega328P Pin(s) | Rationale |
+| --- | --- | --- | --- | --- |
+| Serial | RX / TX | `D0` / `D1` | `2` / `3` | Dedicated UART hardware |
+| I2C | SDA / SCL | `A4` / `A5` | `27` / `28` | Dedicated TWI hardware |
+| Buttons | Left / Fwd / Right | `D2`, `D3`, `D8` | `4`, `5`, `14` | `D2`/`D3` can use external interrupts if needed |
+| Victory LED | Output | `A0` | `23` | Moves output off busy digital bus |
+| OLED (SPI) | SCK | `D13` | `19` | Hardware SPI clock line |
+
+This mapping is useful both in firmware design and in thesis-level documentation when discussing low-level hardware constraints.
