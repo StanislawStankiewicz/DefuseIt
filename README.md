@@ -25,7 +25,7 @@ Arduino-based multi-module bomb-defusal game. A single master controller discove
 
 Each module exports the same edge connector pinout:
 
-- `VCC` (5 V for ATmega328p-based boards)
+- `VCC`
 - `GND`
 - `SDA`
 - `SCL`
