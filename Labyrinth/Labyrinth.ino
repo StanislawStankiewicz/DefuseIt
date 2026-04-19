@@ -65,6 +65,10 @@ void resetGameState() {
   randomSeed(seed);
   Serial.print("[Labyrinth] RNG seed: ");
   Serial.println(seed);
+  lastBtnLeft = HIGH;
+  lastBtnForward = HIGH;
+  lastBtnRight = HIGH;
+  lastInputTime = 0;
   display.clearDisplay();
   display.display();
   placeGoal();

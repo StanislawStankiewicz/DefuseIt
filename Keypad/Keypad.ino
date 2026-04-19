@@ -194,9 +194,17 @@ void resetState() {
   Serial.println(seed);
 
   randomSeed(seed);
+  userInput = "";
+  puzzlesSolved = 0;
+  correctAnswer = 0;
+  currentEquation = "";
   currentMode = selectMode(version);
   waitingAfterMistake = false;
   nextEquationAt = 0;
+  lastRawKey = '\0';
+  debouncedKey = '\0';
+  keyReported = false;
+  keyLastChangeAt = 0;
   generateEquation();
   lcd.clear();
 }
@@ -269,7 +277,6 @@ void gameLoop() {
 void setup() {
   Serial.begin(9600);
   lcd.begin(16, 2);
-  lcd.clear();
   initKeypad();
   pinMode(moduleSolvedPin, OUTPUT);
   digitalWrite(moduleSolvedPin, LOW);

@@ -107,16 +107,10 @@ void setup() {
     pinMode(ENCODER_PIN_B, INPUT_PULLUP);
     pinMode(ENCODER_BTN, INPUT_PULLUP);
 
-    // Initial state
-    lastClk = digitalRead(ENCODER_PIN_A);
-
     // Display
     if(!display.begin(0, true)) { 
         for(;;); // Don't proceed, loop forever
     }
-    
-    display.clearDisplay();
-    display.display();
     
     // Module Comms
     slave.begin();
@@ -132,6 +126,10 @@ void loop() {
 void resetState() {
     randomSeed(millis() + slave.getVersion());
     targetIndex = random(NUM_TARGETS);
+    currentFreq = 3550;
+    lastClk = digitalRead(ENCODER_PIN_A);
+    lastBtnState = digitalRead(ENCODER_BTN);
+    lastDebounceTime = 0;
     
     char buffer[32];
     strcpy_P(buffer, targets[targetIndex].morse);
