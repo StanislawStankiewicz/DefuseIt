@@ -119,6 +119,8 @@ void setup() {
 
   setupPins();
   initializeDisplays();
+  // Initialize switch state to match hardware to avoid missed toggles
+  isSwitchOn = (digitalRead(SWITCH_PIN) == LOW);
 }
 
 void displayTime(int secondsLeft) {

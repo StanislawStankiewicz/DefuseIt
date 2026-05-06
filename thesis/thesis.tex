@@ -857,10 +857,10 @@ W niniejszej sekcji zebrano wyniki praktycznych testów Hardware'owych przeprowa
   \textbf{T03} & 10 & 100\% & Obsługa błędów pojedynczych modułów. Licznik błędów na jednostce Master inkrementuje się prawidłowo. Zaobserwowane anomalii: (1) Dioda na module SimonSays pozostaje zapalona po zatrzymaniu animacji; (2) Przełącznik Master nie reaguje na zmianę stanu tuż po fali błędu. Oba zjawiska wymagają weryfikacji logiki przywracania stanu. \\
   \hline
   
-  \textbf{T04} & 5 & -- & \textit{TBD (wersja robocza).} \\
+  \textbf{T04} & 5 & 100\% & Win path consistency. Wszystkie moduły zostały rozwiązane poprawnie, a zwycięstwo nastąpiło dopiero po zgłoszeniu stanu PASS przez każdy węzeł. \\
   \hline
   
-  \textbf{T05} & 3 & 100\% & Upływ czasu i detekcja timeout. Odchylenie czasowe $\approx 2$ sekundy względem oczekiwanego limitu (zawsze wcześniej niż deklarowano). Sekwencja dźwiękowa ostrzeżeń w ostatnich 10 sekundach wymagała ręcznej obserwacji, ponieważ synchronizacja z wyświetlaczem czasowym (TM1637) mogła się lokalnie różnić. \\
+  \textbf{T05} & 5 & 100\% & Upływ czasu i detekcja timeout. W pięciu przebiegach odchylenie wyniosło odpowiednio około 2 s, 2 s, 2 s, 5 s i 6 s względem oczekiwanego limitu, zawsze po stronie wcześniejszego zakończenia. Sekwencja dźwiękowa ostrzeżeń w ostatnich 10 sekundach wymagała ręcznej obserwacji, ponieważ synchronizacja z wyświetlaczem czasowym (TM1637) mogła się lokalnie różnić. \\
   \hline
   
   \textbf{T06} & 3 & -- & \textit{TBD (wersja robocza).} \\
@@ -890,13 +890,16 @@ Test potwierdzał, że Master poprawnie rejestruje i propaguje licznik błędów
 \end{itemize}
 Rekomendacja: Weryfikacja czasomierza odświeżania w funkcji \texttt{gameLoop()} modułu SimonSays oraz sprawdzenie priorytetu przetwarzania zdarzenia przełącznika na Master.
 
+\subsubsection{Test T04: Konsystencja ścieżki zwycięstwa}
+Test potwierdzał, że zwycięstwo jest sygnalizowane wyłącznie po poprawnym rozwiązaniu wszystkich modułów. Przeprowadzono 5 przebiegów i w każdym przypadku system zakończył grę dopiero po zgłoszeniu stanu PASS przez wszystkie węzły. Wynik: \textbf{5/5 sukcesów}.
+
 \subsubsection{Test T05: Ścieżka timeout}
-Test potwierdzał prawidłowość działania procedury timeout. Przeprowadzono 3 przebiegi, każdy skutkując prawidłowym przekroczeniem limitu czasowego i blokowaniem interfejsów modułów. Obserwacje:
+Test potwierdzał prawidłowość działania procedury timeout. Przeprowadzono 5 przebiegów, każdy skutkując prawidłowym przekroczeniem limitu czasowego i blokowaniem interfejsów modułów. Obserwacje:
 \begin{itemize}
-  \item Odchylenie czasowe: $\approx 2$ sekundy wcześniej niż oczekiwane (w każdym przebiegu).
+  \item Odchylenie czasowe: około 2 s, 2 s, 2 s, 5 s i 6 s wcześniej niż oczekiwane.
   \item Sekwencja akustyczna ostrzeżeń (ostatnie 10 sekund) działała prawidłowo, choć jej synchronizacja z wyświetlaczem TM1637 mogła się lokalnie różnić o 1--2 sekundy.
 \end{itemize}
-Status: \textbf{Zaliczone z uwagą}. Odchylenia czasowe mieszczą się w tolerancji akceptowalnej dla aplikacji (\textit{escape room}), gdzie do 2 sekundy wariancji nie stanowi istotnego wpływu na doświadczenie użytkownika.
+Status: \textbf{Zaliczone z uwagą}. Odchylenia czasowe pozostają roboczą obserwacją do dalszej weryfikacji synchronizacji ostrzeżeń i licznika czasu.
 
 
 \chapter{Podsumowanie i wnioski}

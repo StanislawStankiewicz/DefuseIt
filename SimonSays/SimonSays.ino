@@ -32,6 +32,7 @@ int showIndex = 0;
 unsigned long stateTimer = 0;
 bool ledActive = false;
 int lastPressedButton = -1;
+bool hasShownCurrentSequence = false;
 
 enum ColorIndex { RED = 0, BLUE = 1, YELLOW = 2, GREEN = 3 };
 
@@ -113,10 +114,15 @@ void debugSequence() {
 
 void setFeedback(int index, bool active, bool enableSound) {
     if (index < 0 || index > 3) return;
-    digitalWrite(LED_PINS[index], active ? HIGH : LOW);
-    if (active && enableSound) {
-        tone(SPEAKER_PIN, NOTES[index]);
+    if (active) {
+        for (int i = 0; i < 4; i++) {
+            if (i == index) continue;
+            digitalWrite(LED_PINS[i], LOW);
+        }
+        digitalWrite(LED_PINS[index], HIGH);
+        if (enableSound) tone(SPEAKER_PIN, NOTES[index]);
     } else {
+        digitalWrite(LED_PINS[index], LOW);
         noTone(SPEAKER_PIN);
     }
     ledActive = active;
@@ -166,6 +172,8 @@ void handleUnengaged() {
 }
 
 void handleShowing() {
+    if (hasShownCurrentSequence) return;
+
     unsigned long elapsed = millis() - stateTimer;
 
     if (!ledActive) {
@@ -185,6 +193,7 @@ void handleShowing() {
                 currentState = WAITING_INPUT;
                 inputIndex = 0;
                 stateTimer = millis();
+                hasShownCurrentSequence = true;
             }
         }
     } else {
