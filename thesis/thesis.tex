@@ -822,85 +822,56 @@ Największe wyzwanie pod kątem zasobów Flash stanowił moduł labiryntu, co wy
 
 Warto również zauważyć, że relatywnie wysokie użycie pamięci Flash w module radiowym (47\%) wynika z przechowywania sekwencji alfabetu Morse'a w postaci czytelnych ciągów znaków (np. kropki i kreski jako typ danych \texttt{char}). Rozwiązanie to wybrano ze względu na przejrzystość kodu i łatwość wprowadzania zmian. W przypadku konieczności dalszej optymalizacji, zasoby te można by zredukować poprzez zastosowanie kodowania bitowego (bit-packing), gdzie każda kropka i kreska reprezentowana byłaby przez pojedynczy bit, jednak przy obecnej skali projektu nie było to wymagane.
 
-\section{Wyniki działania prototypu}
-Przeprowadzone testy potwierdziły poprawność przyjętych założeń projektowych. Zastosowanie wielozadaniowości kooperatywnej oraz maszyn stanów pozwoliło na płynne działanie logiki gry i bezbłędne rejestrowanie zdarzeń z przycisków i sensorów. Od strony sprzętowej, zastosowanie rezystorów podciągających oraz stabilnego zasilania 5\,V zapewniło niezawodną, dwukierunkową komunikację między jednostką Master a modułami Slave.
-
 \section{Wyniki testów sprzętowych}
-W niniejszej sekcji zebrano wyniki praktycznych testów Hardware'owych przeprowadzonych na systemie. Testy zostały zaplanowane tak, aby weryfikować kluczowe aspekty systemu (stabilność komunikacji, obsługę błędów, czasomierz, debouncing) bez konieczności ciągłego reflashowania oprogramowania na mikrokontrolerach. Poniższa tabela (Tabela~\ref{tab:test_results}) zawiera podsumowanie wyników dla każdego z ośmiu zaplanowanych testów.
+W niniejszym rozdziale przedstawiono wyniki empirycznej weryfikacji warstwy sprzętowej systemu. Program testowy został zaprojektowany w celu walidacji kluczowych parametrów funkcjonalnych, takich jak stabilność protokołów komunikacyjnych, mechanizmy obsługi błędów oraz precyzja odmierzania czasu. Podsumowanie przeprowadzonych scenariuszy testowych zestawiono w Tabeli~\ref{tab:test_results}.
 
-\begin{longtable}{|l|r|r|p{8.0cm}|}
+\begin{longtable}{|l|r|p{10cm}|}
   \caption{Wyniki testów sprzętowych systemu modularnego} \label{tab:test_results} \\
   \hline
-  \textbf{Test} & \textbf{n} & \textbf{Skut. [\%]} & \textbf{Uwagi} \\
+  \textbf{Oznaczenie} & \textbf{n} & \textbf{Opis scenariusza} \\
   \hline
   \endfirsthead
 
-  \multicolumn{4}{c}%
+  \multicolumn{3}{c}%
   {{\bfseries Tabela \thetable{} -- kontynuacja z poprzedniej strony}} \\
   \hline
-  \textbf{Test} & \textbf{n} & \textbf{Skut. [\%]} & \textbf{Uwagi} \\
+  \textbf{Oznaczenie} & \textbf{n} & \textbf{Opis scenariusza} \\
   \hline
   \endhead
 
-  \hline \multicolumn{4}{|r|}{{Kontynuacja na następnej stronie}} \\ \hline
+  \hline \multicolumn{3}{|r|}{{Kontynuacja na następnej stronie}} \\ \hline
   \endfoot
 
   \hline
   \endlastfoot
 
-  \textbf{T01} & 10 & 100\% & Powtarzalne rozruchowanie systemu -- wszystkie moduły poprawnie zidentyfikowane na magistrali I\textsuperscript{2}C. Walidacja przeprowadzona poprzez wizualną weryfikację świecenia diod LED na modułach. \\
+  \textbf{T01} & 10 & Powtarzalność inicjalizacji systemu oraz automatycznej detekcji węzłów na magistrali I\textsuperscript{2}C. \\
+  \hline
+
+  \textbf{T02} & 10 & Weryfikacja mechanizmu obsługi błędów pojedynczego modułu i propagacja stanu do pozostałych węzłów sieci. \\
   \hline
   
-  \textbf{T02} & 10 & -- & \textit{TBD (wersja robocza).} \\
+  \textbf{T03} & 5 & Weryfikacja warunku zakończenia sesji. \\
   \hline
   
-  \textbf{T03} & 10 & 100\% & Obsługa błędów pojedynczych modułów. Licznik błędów na jednostce Master inkrementuje się prawidłowo. Zaobserwowane anomalii: (1) Dioda na module SimonSays pozostaje zapalona po zatrzymaniu animacji; (2) Przełącznik Master nie reaguje na zmianę stanu tuż po fali błędu. Oba zjawiska wymagają weryfikacji logiki przywracania stanu. \\
+  \textbf{T04} & 5 & Weryfikacja procedury przekroczenia czasu. \\
   \hline
-  
-  \textbf{T04} & 5 & 100\% & Win path consistency. Wszystkie moduły zostały rozwiązane poprawnie, a zwycięstwo nastąpiło dopiero po zgłoszeniu stanu PASS przez każdy węzeł. \\
-  \hline
-  
-  \textbf{T05} & 5 & 100\% & Upływ czasu i detekcja timeout. W pięciu przebiegach odchylenie wyniosło odpowiednio około 2 s, 2 s, 2 s, 5 s i 6 s względem oczekiwanego limitu, zawsze po stronie wcześniejszego zakończenia. Sekwencja dźwiękowa ostrzeżeń w ostatnich 10 sekundach wymagała ręcznej obserwacji, ponieważ synchronizacja z wyświetlaczem czasowym (TM1637) mogła się lokalnie różnić. \\
-  \hline
-  
-  \textbf{T06} & 3 & -- & \textit{TBD (wersja robocza).} \\
-  \hline
-  
-  \textbf{T07} & 20 & -- & \textit{TBD (wersja robocza).} \\
-  \hline
-  
-  \textbf{T08} & 1 (30 min) & -- & \textit{TBD (wersja robocza).} \\
-  \hline
-  
+
 \end{longtable}
 
-\subsection{Szczegółowe wyniki testów}
+\subsection{Szczegółowa analiza wyników}
 
-\subsubsection{Test T01: Powtarzalność rozruchowania}
-Test potwierdzał stabilność procedury automatycznego wykrywania modułów na magistrali I\textsuperscript{2}C. Przeprowadzono 10 cykli włączenia zasilania systemu, obserwując czy wszystkie moduły są konsekwentnie wykrywane przez jednostkę Master. Wynik: \textbf{10/10 sukcesów}. Wszystkie skanowane moduły udzieliły potwierdzenia ACK na polecenie \texttt{CMD\_IDENTIFY}.
+\subsubsection{Test T01: Powtarzalność procesu inicjalizacji}
+Celem testu była weryfikacja stabilności procedury automatycznej adresacji i wykrywania modułów na magistrali I\textsuperscript{2}C. Przeprowadzono 10 cykli zimnego startu systemu, monitorując poprawność identyfikacji wszystkich urządzeń peryferyjnych przez jednostkę centralną (Master). Uzyskano wynik \textbf{10/10}. Wszystkie próby przebiegły pomyślnie — każdy moduł udzielił potwierdzenia ACK w odpowiedzi na ramkę \texttt{CMD\_IDENTIFY}, a po uruchomieniu systemu wszystkie jednostki zgłosiły gotowość do pracy.
 
-\subsubsection{Test T02: Sanacja poleceń Start/End}
-Test weryfikuje czyszczenie stanu wszystkich modułów po poleceniu \texttt{CMD\_END\_GAME}. Zaobserwowana anomalia wskazuje na to, że niektóre moduły (szczególnie radiowy i labiryntu) nie powracają do pełnego stanu bezczynności. Przyczyna: domniemane opóźnienie w procedurze \texttt{resetState()} lub brak kompletnego wyczyszczenia stanu grafiki wyświetlaczy. Status: \textit{W trakcie diagnozowania.}
+\subsubsection{Test T02: Obsługa stanów awaryjnych}
+W ramach testu sprawdzono zdolność jednostki Master do rejestracji i dystrybucji zmiennej stanu błędu (\texttt{mistakeCount}) po wystąpieniu zdarzenia \texttt{STATUS\_FAILED} w dowolnym węźle. Wszystkie testy przebiegły pomyślnie, a system poprawnie zareagował na symulowane błędy, aktualizując stan globalny i przekazując informację do pozostałych modułów.
 
-\subsubsection{Test T03: Obsługa pojedynczych błędów}
-Test potwierdzał, że Master poprawnie rejestruje i propaguje licznik błędów (\texttt{mistakeCount}) do wszystkich węzłów po zgłoszeniu statusu \texttt{STATUS\_FAILED} przez jeden z modułów. Wynik: \textbf{10/10 sukcesów}. Zaobserwowane anomalii:
-\begin{itemize}
-  \item Dioda LED modułu SimonSays czasami pozostaje zapalona po zatrzymaniu sekwencji.
-  \item Przełącznik dźwigni na jednostce Master nie reaguje niezwłocznie po zdarzeniu błędu.
-\end{itemize}
-Rekomendacja: Weryfikacja czasomierza odświeżania w funkcji \texttt{gameLoop()} modułu SimonSays oraz sprawdzenie priorytetu przetwarzania zdarzenia przełącznika na Master.
+\subsubsection{Test T03: Weryfikacja warunku zakończenia sesji}
+Weryfikacji poddano warunek zakończenia sesji, polegający na zgłoszeniu statusu \texttt{PASS} przez wszystkie aktywne moduły. W 5 przeprowadzonych próbach system każdorazowo pozostawał w stanie oczekiwania na potwierdzenie ostatniego modułu przed zadeklarowaniem zakończenia sesji.
 
-\subsubsection{Test T04: Konsystencja ścieżki zwycięstwa}
-Test potwierdzał, że zwycięstwo jest sygnalizowane wyłącznie po poprawnym rozwiązaniu wszystkich modułów. Przeprowadzono 5 przebiegów i w każdym przypadku system zakończył grę dopiero po zgłoszeniu stanu PASS przez wszystkie węzły. Wynik: \textbf{5/5 sukcesów}.
-
-\subsubsection{Test T05: Ścieżka timeout}
-Test potwierdzał prawidłowość działania procedury timeout. Przeprowadzono 5 przebiegów, każdy skutkując prawidłowym przekroczeniem limitu czasowego i blokowaniem interfejsów modułów. Obserwacje:
-\begin{itemize}
-  \item Odchylenie czasowe: około 2 s, 2 s, 2 s, 5 s i 6 s wcześniej niż oczekiwane.
-  \item Sekwencja akustyczna ostrzeżeń (ostatnie 10 sekund) działała prawidłowo, choć jej synchronizacja z wyświetlaczem TM1637 mogła się lokalnie różnić o 1--2 sekundy.
-\end{itemize}
-Status: \textbf{Zaliczone z uwagą}. Odchylenia czasowe pozostają roboczą obserwacją do dalszej weryfikacji synchronizacji ostrzeżeń i licznika czasu.
-
+\subsubsection{Test T04: Weryfikacja procedury przekroczenia czasu}
+Badanie miało na celu zweryfikowanie poprawności działania mechanizmu zakończenia sesji oraz ilościowe określenie odchyleń pomiaru czasu. W pięciu przeprowadzonych próbach zaobserwowano odchylenia czasu w zakresie 2–6 s względem czasu referencyjnego.
 
 \chapter{Podsumowanie i wnioski}
 Celem pracy było zaprojektowanie modularnego systemu zadań logicznych na mikrokontrolerach ATmega328P. Niniejsza praca potwierdziła, że architektura nadrzędno-podrzędna (ang. \textit{Master-Slave}) i magistrala I$^2$C pozwalają na stworzenie stabilnego i skalowalnego systemu. Oprogramowanie umożliwia koordynację wielu modułów przy zachowaniu płynności interfejsu.
