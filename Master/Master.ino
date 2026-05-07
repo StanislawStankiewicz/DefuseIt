@@ -17,6 +17,14 @@
 #define SWITCH_PIN     12
 #define SWITCH_GND     13
 
+const uint8_t MAX_TEST_MODULES = 16;
+unsigned long discoveryStartTime = 0;
+unsigned long discoveryEndTime = 0;
+unsigned long discoveryDuration = 0;
+unsigned long pollCounts[MAX_TEST_MODULES];
+unsigned long totalPollCount = 0;
+uint8_t detectedModuleCount = 0;
+
 const byte digitCode[10] = {
   0xC0, // 0
   0xF9, // 1
@@ -71,6 +79,44 @@ int currentBlink = 0;
 unsigned long lastBlinkEndTime = 0;
 int failedModuleIndex = -1;
 bool isGameEnded = false;
+unsigned long lastTestStatsLogTime = 0;
+uint8_t lastModuleStatuses[MAX_TEST_MODULES];
+
+const char* moduleStatusToString(uint8_t status) {
+  switch (status) {
+    case STATUS_UNSOLVED: return "UNSOLVED";
+    case STATUS_PASSED:   return "PASSED";
+    case STATUS_FAILED:   return "FAILED";
+    default:              return "UNKNOWN";
+  }
+}
+
+void logModuleStatusChange(uint8_t index, uint8_t status) {
+  Serial.print("Master: Module ");
+  Serial.print(index);
+  Serial.print(" (0x");
+  Serial.print(master.getModuleAddress(index), HEX);
+  Serial.print(") status -> ");
+  Serial.println(moduleStatusToString(status));
+}
+
+void printLiveTestStats() {
+  Serial.println("---- LIVE TEST STATS ----");
+  Serial.print("Remaining time (s): "); Serial.println(remainingTime);
+  Serial.print("Mistake count: "); Serial.println(mistakeCount);
+  Serial.print("Beep interval (ms): "); Serial.println(beepInterval);
+  Serial.print("Switch state: "); Serial.println(isSwitchOn ? "ON" : "OFF");
+  Serial.print("Failure handling: "); Serial.println(isHandlingFailure ? "YES" : "NO");
+  Serial.print("Detected modules: "); Serial.println(detectedModuleCount);
+  Serial.print("Total polls counted: "); Serial.println(totalPollCount);
+  for (uint8_t i = 0; i < detectedModuleCount; i++) {
+    Serial.print("Module "); Serial.print(i);
+    Serial.print(" (0x"); Serial.print(master.getModuleAddress(i), HEX); Serial.print(") ");
+    Serial.print(moduleStatusToString(lastModuleStatuses[i]));
+    Serial.print(" | polls: "); Serial.println(pollCounts[i]);
+  }
+  Serial.println("-------------------------");
+}
 
 void setupPins() {
   pinMode(BUTTON_PIN,    INPUT_PULLUP);
@@ -93,11 +139,34 @@ void initializeModules() {
   master.begin();
 
   Serial.println("Master: Discovering modules...");
+  Serial.print("Master: Discovery start time (ms): ");
+  Serial.println(millis());
+  discoveryStartTime = millis();
   master.discoverModules();
+  discoveryEndTime = millis();
+  discoveryDuration = discoveryEndTime - discoveryStartTime;
+  detectedModuleCount = master.getModuleCount();
+  if (detectedModuleCount > MAX_TEST_MODULES) detectedModuleCount = MAX_TEST_MODULES;
+  // reset poll counters
+  totalPollCount = 0;
+  for (uint8_t i = 0; i < MAX_TEST_MODULES; i++) {
+    pollCounts[i] = 0;
+    lastModuleStatuses[i] = 0xFF;
+  }
 
   Serial.print("Master: Found ");
   Serial.print(master.getModuleCount());
   Serial.println(" module(s)");
+  Serial.print("Master: Discovery end time (ms): ");
+  Serial.println(discoveryEndTime);
+  Serial.print("Master: Discovery time (ms): ");
+  Serial.println(discoveryDuration);
+  for (uint8_t i = 0; i < detectedModuleCount; i++) {
+    Serial.print("Master: Discovered module ");
+    Serial.print(i);
+    Serial.print(" at 0x");
+    Serial.println(master.getModuleAddress(i), HEX);
+  }
 }
 
 void clearVersionDisplay() {
@@ -165,6 +234,8 @@ void startGame() {
   initializeModules();
   randomSeed(millis());
   master.setVersion(random(1, 100));
+  Serial.print("Master: Version set to: ");
+  Serial.println(master.getVersion());
   displayVersion(master.getVersion());
   master.startGame();
   updateMistakeCountModules();
@@ -172,7 +243,10 @@ void startGame() {
   remainingTime = gameDurationSeconds;
   lastTimerUpdate = millis();
   lastBeepTime = millis();
+  lastTestStatsLogTime = millis();
   beepInterval = initialInterval;
+  Serial.print("Master: Game duration (s): ");
+  Serial.println(gameDurationSeconds);
   updateTimeSyncModules(remainingTime);
   beep();
   delay(500);
@@ -180,6 +254,7 @@ void startGame() {
 
 void resetGame() {
   Serial.println("Master: Resetting game.");
+  printMetricsSummary();
   master.endGame();
   isGameInProgress = false;
   areAllModulesSolved = false;
@@ -194,13 +269,11 @@ void resetGame() {
   blinkStartTime = 0;
   currentBlink = 0;
   lastBlinkEndTime = 0;
+  lastTestStatsLogTime = 0;
   digitalWrite(GREEN_LED_PIN, LOW);
   digitalWrite(RED_LED_PIN, LOW);
   displayTime(remainingTime);
   clearVersionDisplay();
-  
-  initializeModules();
-  updateMistakeCountModules();
 }
 
 void handleSwitch() {
@@ -235,6 +308,7 @@ void handleSwitch() {
 
 void handleButton() {
   if (!isGameInProgress && digitalRead(BUTTON_PIN) == LOW) {
+    Serial.println("Master: Start button pressed");
     startGame();
   }
 }
@@ -320,14 +394,48 @@ void handleFailure() {
 void checkModules() {
   areAllModulesSolved = true;
   failedModuleIndex = -1;
-  for (uint8_t i = 0; i < master.getModuleCount(); i++) {
+  uint8_t moduleCount = master.getModuleCount();
+  for (uint8_t i = 0; i < moduleCount; i++) {
     uint8_t status = master.getModuleStatus(i);
+    // Count polls per module (avoid overflow of our fixed array)
+    if (i < MAX_TEST_MODULES) {
+      pollCounts[i]++;
+      lastModuleStatuses[i] = status;
+    }
+    totalPollCount++;
     if (status != STATUS_PASSED) {
       areAllModulesSolved = false;
     }
     if (status == STATUS_FAILED) {
       failedModuleIndex = i;
       break;
+    }
+  }
+}
+
+void printMetricsSummary() {
+  Serial.println("---- TEST METRICS SUMMARY ----");
+  Serial.print("Discovery time (ms): "); Serial.println(discoveryDuration);
+  Serial.print("Detected modules: "); Serial.println(master.getModuleCount());
+  unsigned long total = 0;
+  for (uint8_t i = 0; i < detectedModuleCount; i++) {
+    Serial.print("Module "); Serial.print(i);
+    Serial.print(" poll count: "); Serial.println(pollCounts[i]);
+    total += pollCounts[i];
+  }
+  Serial.print("Total polls counted: "); Serial.println(totalPollCount);
+  Serial.print("Mistake count: "); Serial.println(mistakeCount);
+  Serial.println("-------------------------------");
+}
+
+void handleLiveTestStats() {
+  if (isGameInProgress && millis() - lastTestStatsLogTime >= 5000) {
+    lastTestStatsLogTime = millis();
+    printLiveTestStats();
+    // Reset poll counters for next 5-second window
+    totalPollCount = 0;
+    for (uint8_t i = 0; i < MAX_TEST_MODULES; i++) {
+      pollCounts[i] = 0;
     }
   }
 }
@@ -340,6 +448,7 @@ void checkWinLose() {
     digitalWrite(RED_LED_PIN, LOW);
     isGameInProgress = false;
     isGameEnded = true;
+    printMetricsSummary();
   }
 
   if (remainingTime == 0 || mistakeCount >= maxMistakes) {
@@ -354,6 +463,7 @@ void checkWinLose() {
     tone(BUZZER_PIN, 1000, 2000);
     isGameInProgress = false;
     isGameEnded = true;
+    printMetricsSummary();
   }
 
   if (failedModuleIndex != -1 && !isHandlingFailure) {
@@ -396,6 +506,7 @@ void loop() {
       checkWinLose();
     }
 
+    handleLiveTestStats();
     delay(50);
   }
 }
