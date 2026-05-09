@@ -524,95 +524,6 @@ void loop() {
 \end{lstlisting}
 
 
-\subsection{Moduł radia} Stanowi łamigłówkę opartą na dekodowaniu alfabetu Morse'a i strojeniu częstotliwości radiowej. Na module prezentowany jest sygnał nawigacyjny w postaci migającej diody LED wysokiej jasności, odwzorowującej rytm kodu Morse'a. Zadaniem gracza jest odsłuchanie i rozkodowanie sekwencji sygnałów w celu ustalenia słowa kluczowego, a następnie odszukanie powiązanej z nim częstotliwości nadajnika w materiałach referencyjnych i wybranie jej za pomocą inkrementalnego enkodera obrotowego. Poprawne dostrojenie transpondera kończy zagadkę.
-
-Koordynację wszystkich systemów modułu — odświeżania ekranu, obsługi enkodera oraz generowania sygnałów świetlnych — realizuje funkcja \texttt{gameLoop()}. Jest ona wywoływana asynchronicznie przez bibliotekę komunikacyjną, co pozwala na zachowanie responsywności węzła przy jednoczesnym wykonywaniu logiki gry.
-
-Listing~\ref{lst:radio-gameloop} pokazuje kolejność wywołań funkcji odpowiedzialnych za logikę modułu radiowego.
-\begin{lstlisting}[language=C++, caption={Główna pętla logiczna modułu radiowego (Radio.ino)}, label={lst:radio-gameloop}]
-void gameLoop() {
-    // Pierwszorzędne odświeżenie ekranu po inicjalizacji gry
-    if (needsInitialRender) {
-        updateDisplay();
-        needsInitialRender = false;
-    }
-    handleEncoder();    // Obsługa strojenia częstotliwości
-    handleButton();     // Weryfikacja naciśnięcia przycisku zatwierdzenia
-    handleMorseCode();  // Asynchroniczne generowanie kodu Morse'a na diodzie LED
-}
-\end{lstlisting}
-
-Zastosowany model programowania opiera się na maszynie stanów i nieblokujących licznikach \texttt{millis()}, dzięki czemu animacja diody LED nie wstrzymuje pracy procesora. Kluczowym wyzwaniem implementacyjnym była optymalizacja pamięci SRAM, na którą duży wpływ ma sterownik wyświetlacza OLED (rezerwujący dynamicznie 1024 bajty na bufor ramki). Aby uniknąć przepełnienia stosu, wszystkie definicje słów i częstotliwości zostały przeniesione do nieulotnej pamięci programu.
-
-Listing~\ref{lst:radio-progmem-targets} prezentuje strukturę danych \texttt{RadioTarget} oraz deklaracje \texttt{PROGMEM} użyte do oszczędzania pamięci SRAM.
-\begin{lstlisting}[language=C++, caption={Deklaracja haseł telegraficznych i częstotliwości w pamięci Flash (Radio.ino)}, label={lst:radio-progmem-targets}]
-const char m_0[] PROGMEM = "... .... . .-.. .-..";
-// [...]
-const char m_15[] PROGMEM = "-... . .- - ...";
-
-struct RadioTarget {
-    uint16_t freq;      // Częstotliwość docelowa nadajnika (np. 3505 dla 3.505 MHz)
-    const char* morse;  // Wskaźnik do ciągu znaków w pamięci Flash
-};
-
-const RadioTarget targets[] = {
-    {3505, m_0},        // shell
-    // [...]
-    {3608, m_15}        // beats
-};
-\end{lstlisting}
-
-\subsection{Moduł labiryntu} Stanowi przestrzenną łamigłówkę nawigacyjną, w której gracz porusza się wewnątrz wirtualnego labiryntu za pomocą trzech przycisków (ruch na wprost oraz obroty w prawo lub w lewo). Interfejs graficzny oparto na wyświetlaczu OLED 128x64 pikseli. Co istotne, w przeciwieństwie do innych modułów, system ten komunikuje się z ekranem za pomocą szybkiej magistrali SPI (piny \texttt{MOSI}, \texttt{CLK}, \texttt{CS}, \texttt{DC}, \texttt{RST}). Wybór tego standardu zamiast I$^2$C podyktowany był nie tylko wyższą przepustowością niezbędną do odświeżania pełnoekranowych bitmap, ale przede wszystkim ograniczeniem sprzętowym mikrokontrolera. ATmega328P posiada tylko jeden interfejs I$^2$C, który w tym przypadku musi stale pracować w trybie Slave, by odbierać komendy od Mastera. Równoczesne pełnienie roli Mastera dla wyświetlacza byłoby na tym układzie praktycznie niemożliwe.
-
-Logika modułu opiera się na współdzieleniu funkcji \texttt{canMove()} zarówno do walidacji przemieszczeń gracza, jak i do dynamicznego generowania rzutu perspektywicznego. Sercem koordynacji jest funkcja \texttt{gameLoop()}, która w sposób nieblokujący zarządza stanem wejść i wyjść.
-
-Listing~\ref{lst:labyrinth-gameloop} przedstawia nieblokującą obsługę wejść użytkownika i renderowania widoku labiryntu.
-\begin{lstlisting}[language=C++, caption={Główna pętla logiczna modułu labiryntu (Labyrinth.ino)}, label={lst:labyrinth-gameloop}]
-void gameLoop() {
-  // Pierwszorzędne narysowanie widoku po starcie gry
-  if (needsInitialRender) {
-    renderView();
-    needsInitialRender = false;
-  }
-  // Odczyt stanów przycisków sterujących
-  bool btnLeft    = digitalRead(BTN_LEFT);
-  bool btnForward = digitalRead(BTN_FORWARD);
-  bool btnRight   = digitalRead(BTN_RIGHT);
-  
-  unsigned long currentMillis = millis();
-
-  // Obsługa wejścia z programowym debouncingiem
-  if (currentMillis - lastInputTime >= INPUT_DELAY) {
-    if (!btnForward && lastBtnForward) {
-      lastInputTime = currentMillis;
-      if (moveForward()) {
-        display.clearDisplay(); // Czyszczenie po wygranej
-        display.display();
-        return;
-      }
-      renderView();
-    }
-    else if (!btnLeft && lastBtnLeft) {
-      lastInputTime = currentMillis;
-      turnLeft();
-      renderView();
-    }
-    else if (!btnRight && lastBtnRight) {
-      lastInputTime = currentMillis;
-      turnRight();
-      renderView();
-    }
-  }
-  // Zapamiętanie stanów do detekcji zbocza
-  lastBtnLeft    = btnLeft;
-  lastBtnForward = btnForward;
-  lastBtnRight   = btnRight;
-}
-\end{lstlisting}
-
-Warstwa wizualna budowana jest z przeskalowanych bitmap definiujących ściany w różnej odległości i perspektywie. Wszystkie elementy graficzne (np. \texttt{epd\_bitmap\_closed\_left\_far}) przechowywane są w pamięci Flash za pomocą dyrektywy \texttt{PROGMEM}. Każda bitmapa o wymiarach 128x64 piksele zajmuje 1024 bajty (1\,KB) pamięci nieulotnej, gdzie pojedynczy bajt definiuje stan ośmiu sąsiednich pikseli w poziomie. Dzięki takiemu podejściu, mimo że zbiór grafik waży aż 15\,KB, moduł mieści się w pamięci ATmega328P, rezerwując jedynie niezbędny stały bufor ramki (1\,KB) w pamięci operacyjnej SRAM. Moduł zajmuje 28234 bajty (87\%) Flash oraz 792 bajty (38\%) SRAM.
-
-
 \subsection{Moduł sekwencyjny} Stanowi implementację klasycznej łamigłówki typu \textit{Simon Mówi}, w której gracz musi zapamiętać i bezbłędnie odwzorować rosnącą sekwencję sygnałów świetlno-dźwiękowych. Warstwa sprzętowa modułu opiera się na czterech przyciskach mechanicznych przypisanych do kolorów oraz przetworniku piezoelektrycznym. Przebieg rozgrywki podzielono na fazy prezentacji (\texttt{SHOWING}) oraz oczekiwania na wejście (\texttt{WAITING\_INPUT}), zarządzane przez maszynę stanów.
 
 Kluczowym mechanizmem utrudniającym zadanie jest dynamiczne przypisywanie kolorów przycisków w zależności od aktualnej liczby błędów popełnionych w całej grze. Funkcja \texttt{mapColorByMistakes()} sprawia, że ten sam kolor sygnału może wymagać naciśnięcia innego przycisku w miarę narastania presji czasu i liczby pomyłek przesyłanych magistralą I$^2$C.
@@ -657,7 +568,6 @@ int mapColorByMistakes(int shownColor, uint8_t mistakeCount) {
     return map2plus[shownColor];
 }
 \end{lstlisting}
-
 
 \subsection{Moduł arytmetyczny} Stanowi łamigłówkę matematyczną, w której zadaniem gracza jest rozwiązanie proceduralnie generowanego zadania i wprowadzenie wyniku za pomocą klawiatury. Warstwa sprzętowa modułu składa się z 16-klawiszowej klawiaturze membranowej w topologii matrycowej oraz alfanumerycznego wyświetlacza LCD 16x2. W przeciwieństwie do założeń wykorzystujących adapter I$^2$C, w ostatecznej implementacji zdecydowano się na bezpośrednie sterowanie równoległe (6 linii sterujących), co pozwoliło na uproszczenie warstwy programowej kosztem wykorzystania większej liczby pinów mikrokontrolera (od D11 do A2).
 
@@ -725,6 +635,7 @@ char scanKeypad() {
 }
 \end{lstlisting}
 
+
 \subsection{Moduł z przełącznikiem} Stanowi prostą, lecz wymagającą precyzji zagadkę, w której zadaniem gracza jest wykonanie właściwej akcji na fizycznym przełączniku dźwigniowym w oparciu o aktualny kolor podświetlenia diody RGB. W zależności od koloru i numeru wersji rozgrywki (\texttt{version}), moduł oczekuje jednej z dwóch akcji: szybkiego przełączenia (\textit{Click}) lub przytrzymania przełącznika (\textit{Hold}) do momentu wystąpienia konkretnej cyfry na liczniku głównym.
 
 Koordynację stanów modułu realizuje funkcja \texttt{gameLoop()}, która monitoruje fizyczny stan pinu wejściowego i w zależności od wybranego trybu wywołuje procedury przetwarzające czas trwania interakcji.
@@ -768,6 +679,94 @@ ActionType determineAction(ColorId color, uint8_t version) {
     }
     return ACTION_HOLD; // Domyślnie wymagane przytrzymanie
 }
+\end{lstlisting}
+
+\subsection{Moduł labiryntu} Stanowi przestrzenną łamigłówkę nawigacyjną, w której gracz porusza się wewnątrz wirtualnego labiryntu za pomocą trzech przycisków (ruch na wprost oraz obroty w prawo lub w lewo). Interfejs graficzny oparto na wyświetlaczu OLED 128x64 pikseli. Co istotne, w przeciwieństwie do innych modułów, system ten komunikuje się z ekranem za pomocą szybkiej magistrali SPI (piny \texttt{MOSI}, \texttt{CLK}, \texttt{CS}, \texttt{DC}, \texttt{RST}). Wybór tego standardu zamiast I$^2$C podyktowany był nie tylko wyższą przepustowością niezbędną do odświeżania pełnoekranowych bitmap, ale przede wszystkim ograniczeniem sprzętowym mikrokontrolera. ATmega328P posiada tylko jeden interfejs I$^2$C, który w tym przypadku musi stale pracować w trybie Slave, by odbierać komendy od Mastera. Równoczesne pełnienie roli Mastera dla wyświetlacza byłoby na tym układzie praktycznie niemożliwe.
+
+Logika modułu opiera się na współdzieleniu funkcji \texttt{canMove()} zarówno do walidacji przemieszczeń gracza, jak i do dynamicznego generowania rzutu perspektywicznego. Sercem koordynacji jest funkcja \texttt{gameLoop()}, która w sposób nieblokujący zarządza stanem wejść i wyjść.
+
+Listing~\ref{lst:labyrinth-gameloop} przedstawia nieblokującą obsługę wejść użytkownika i renderowania widoku labiryntu.
+\begin{lstlisting}[language=C++, caption={Główna pętla logiczna modułu labiryntu (Labyrinth.ino)}, label={lst:labyrinth-gameloop}]
+void gameLoop() {
+  // Pierwszorzędne narysowanie widoku po starcie gry
+  if (needsInitialRender) {
+    renderView();
+    needsInitialRender = false;
+  }
+  // Odczyt stanów przycisków sterujących
+  bool btnLeft    = digitalRead(BTN_LEFT);
+  bool btnForward = digitalRead(BTN_FORWARD);
+  bool btnRight   = digitalRead(BTN_RIGHT);
+  
+  unsigned long currentMillis = millis();
+
+  // Obsługa wejścia z programowym debouncingiem
+  if (currentMillis - lastInputTime >= INPUT_DELAY) {
+    if (!btnForward && lastBtnForward) {
+      lastInputTime = currentMillis;
+      if (moveForward()) {
+        display.clearDisplay(); // Czyszczenie po wygranej
+        display.display();
+        return;
+      }
+      renderView();
+    }
+    else if (!btnLeft && lastBtnLeft) {
+      lastInputTime = currentMillis;
+      turnLeft();
+      renderView();
+    }
+    else if (!btnRight && lastBtnRight) {
+      lastInputTime = currentMillis;
+      turnRight();
+      renderView();
+    }
+  }
+  // Zapamiętanie stanów do detekcji zbocza
+  lastBtnLeft    = btnLeft;
+  lastBtnForward = btnForward;
+  lastBtnRight   = btnRight;
+}
+\end{lstlisting}
+
+Warstwa wizualna budowana jest z przeskalowanych bitmap definiujących ściany w różnej odległości i perspektywie. Wszystkie elementy graficzne (np. \texttt{epd\_bitmap\_closed\_left\_far}) przechowywane są w pamięci Flash za pomocą dyrektywy \texttt{PROGMEM}. Każda bitmapa o wymiarach 128x64 piksele zajmuje 1024 bajty (1\,KB) pamięci nieulotnej, gdzie pojedynczy bajt definiuje stan ośmiu sąsiednich pikseli w poziomie. Dzięki takiemu podejściu, mimo że zbiór grafik waży aż 15\,KB, moduł mieści się w pamięci ATmega328P, rezerwując jedynie niezbędny stały bufor ramki (1\,KB) w pamięci operacyjnej SRAM. Moduł zajmuje 28234 bajty (87\%) Flash oraz 792 bajty (38\%) SRAM.
+
+\subsection{Moduł radia} Stanowi łamigłówkę opartą na dekodowaniu alfabetu Morse'a i strojeniu częstotliwości radiowej. Na module prezentowany jest sygnał nawigacyjny w postaci migającej diody LED wysokiej jasności, odwzorowującej rytm kodu Morse'a. Zadaniem gracza jest odsłuchanie i rozkodowanie sekwencji sygnałów w celu ustalenia słowa kluczowego, a następnie odszukanie powiązanej z nim częstotliwości nadajnika w materiałach referencyjnych i wybranie jej za pomocą inkrementalnego enkodera obrotowego. Poprawne dostrojenie transpondera kończy zagadkę.
+
+Koordynację wszystkich systemów modułu — odświeżania ekranu, obsługi enkodera oraz generowania sygnałów świetlnych — realizuje funkcja \texttt{gameLoop()}. Jest ona wywoływana asynchronicznie przez bibliotekę komunikacyjną, co pozwala na zachowanie responsywności węzła przy jednoczesnym wykonywaniu logiki gry.
+
+Listing~\ref{lst:radio-gameloop} pokazuje kolejność wywołań funkcji odpowiedzialnych za logikę modułu radiowego.
+\begin{lstlisting}[language=C++, caption={Główna pętla logiczna modułu radiowego (Radio.ino)}, label={lst:radio-gameloop}]
+void gameLoop() {
+    // Pierwszorzędne odświeżenie ekranu po inicjalizacji gry
+    if (needsInitialRender) {
+        updateDisplay();
+        needsInitialRender = false;
+    }
+    handleEncoder();    // Obsługa strojenia częstotliwości
+    handleButton();     // Weryfikacja naciśnięcia przycisku zatwierdzenia
+    handleMorseCode();  // Asynchroniczne generowanie kodu Morse'a na diodzie LED
+}
+\end{lstlisting}
+
+Zastosowany model programowania opiera się na maszynie stanów i nieblokujących licznikach \texttt{millis()}, dzięki czemu animacja diody LED nie wstrzymuje pracy procesora. Kluczowym wyzwaniem implementacyjnym była optymalizacja pamięci SRAM, na którą duży wpływ ma sterownik wyświetlacza OLED (rezerwujący dynamicznie 1024 bajty na bufor ramki). Aby uniknąć przepełnienia stosu, wszystkie definicje słów i częstotliwości zostały przeniesione do nieulotnej pamięci programu.
+
+Listing~\ref{lst:radio-progmem-targets} prezentuje strukturę danych \texttt{RadioTarget} oraz deklaracje \texttt{PROGMEM} użyte do oszczędzania pamięci SRAM.
+\begin{lstlisting}[language=C++, caption={Deklaracja haseł telegraficznych i częstotliwości w pamięci Flash (Radio.ino)}, label={lst:radio-progmem-targets}]
+const char m_0[] PROGMEM = "... .... . .-.. .-..";
+// [...]
+const char m_15[] PROGMEM = "-... . .- - ...";
+
+struct RadioTarget {
+    uint16_t freq;      // Częstotliwość docelowa nadajnika (np. 3505 dla 3.505 MHz)
+    const char* morse;  // Wskaźnik do ciągu znaków w pamięci Flash
+};
+
+const RadioTarget targets[] = {
+    {3505, m_0},        // shell
+    // [...]
+    {3608, m_15}        // beats
+};
 \end{lstlisting}
 
 \chapter{Testy i działanie systemu}
