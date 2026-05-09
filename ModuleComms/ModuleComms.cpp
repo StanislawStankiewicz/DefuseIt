@@ -38,7 +38,7 @@ void Master::broadcastMistakeCount(uint8_t mistakeCount) {
 void Master::discoverModules() {
     moduleCount = 0;
 
-    for (uint8_t address = 1; address < 127; address++) {
+    for (uint8_t address = 1; address < 32; address++) {
         Serial.println(address, HEX);
         Wire.beginTransmission(address);
         Wire.write(CMD_IDENTIFY);
