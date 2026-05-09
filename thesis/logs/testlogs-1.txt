@@ -1,0 +1,997 @@
+Switch turned on
+Master: Starting game.
+Master: Initializing...
+Master: Discovering modules...
+Master: Discovery start time (ms): 134825
+1
+2
+3
+4
+5
+6
+7
+8
+9
+A
+B
+C
+D
+E
+F
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+1A
+1B
+1C
+1D
+1E
+1F
+Master: Found 5 module(s)
+Master: Discovery end time (ms): 134950
+Master: Discovery time (ms): 116
+Master: Discovered module 0 at 0x11
+Master: Discovered module 1 at 0x12
+Master: Discovered module 2 at 0x13
+Master: Discovered module 3 at 0x14
+Master: Discovered module 4 at 0x15
+Master: Version set to: 44
+Master: Game duration (s): 300
+---- LIVE TEST STATS ----
+Remaining time (s): 296
+Mistake count: 0
+Beep interval (ms): 10000
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 425
+Module 0 (0x11) UNSOLVED | polls: 85
+Module 1 (0x12) UNSOLVED | polls: 85
+Module 2 (0x13) UNSOLVED | polls: 85
+Module 3 (0x14) UNSOLVED | polls: 85
+Module 4 (0x15) UNSOLVED | polls: 85
+-------------------------
+Beep interval set to: 9720
+---- LIVE TEST STATS ----
+Remaining time (s): 291
+Mistake count: 0
+Beep interval (ms): 9720
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+---- LIVE TEST STATS ----
+Remaining time (s): 286
+Mistake count: 0
+Beep interval (ms): 9720
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 9410
+---- LIVE TEST STATS ----
+Remaining time (s): 281
+Mistake count: 0
+Beep interval (ms): 9410
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+---- LIVE TEST STATS ----
+Remaining time (s): 276
+Mistake count: 0
+Beep interval (ms): 9410
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 9131
+---- LIVE TEST STATS ----
+Remaining time (s): 271
+Mistake count: 0
+Beep interval (ms): 9131
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+---- LIVE TEST STATS ----
+Remaining time (s): 266
+Mistake count: 0
+Beep interval (ms): 9131
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 8851
+---- LIVE TEST STATS ----
+Remaining time (s): 261
+Mistake count: 0
+Beep interval (ms): 8851
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+---- LIVE TEST STATS ----
+Remaining time (s): 256
+Mistake count: 0
+Beep interval (ms): 8851
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 8572
+---- LIVE TEST STATS ----
+Remaining time (s): 251
+Mistake count: 0
+Beep interval (ms): 8572
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+---- LIVE TEST STATS ----
+Remaining time (s): 246
+Mistake count: 0
+Beep interval (ms): 8572
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 8324
+---- LIVE TEST STATS ----
+Remaining time (s): 241
+Mistake count: 0
+Beep interval (ms): 8324
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 8075
+---- LIVE TEST STATS ----
+Remaining time (s): 237
+Mistake count: 0
+Beep interval (ms): 8075
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+---- LIVE TEST STATS ----
+Remaining time (s): 232
+Mistake count: 0
+Beep interval (ms): 8075
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 7827
+---- LIVE TEST STATS ----
+Remaining time (s): 227
+Mistake count: 0
+Beep interval (ms): 7827
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 7610
+---- LIVE TEST STATS ----
+Remaining time (s): 222
+Mistake count: 0
+Beep interval (ms): 7610
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+---- LIVE TEST STATS ----
+Remaining time (s): 217
+Mistake count: 0
+Beep interval (ms): 7610
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 7362
+---- LIVE TEST STATS ----
+Remaining time (s): 212
+Mistake count: 0
+Beep interval (ms): 7362
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 7144
+---- LIVE TEST STATS ----
+Remaining time (s): 207
+Mistake count: 0
+Beep interval (ms): 7144
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+---- LIVE TEST STATS ----
+Remaining time (s): 202
+Mistake count: 0
+Beep interval (ms): 7144
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 6927
+---- LIVE TEST STATS ----
+Remaining time (s): 197
+Mistake count: 0
+Beep interval (ms): 6927
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 6710
+---- LIVE TEST STATS ----
+Remaining time (s): 192
+Mistake count: 0
+Beep interval (ms): 6710
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 6493
+---- LIVE TEST STATS ----
+Remaining time (s): 187
+Mistake count: 0
+Beep interval (ms): 6493
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+---- LIVE TEST STATS ----
+Remaining time (s): 182
+Mistake count: 0
+Beep interval (ms): 6493
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 6306
+---- LIVE TEST STATS ----
+Remaining time (s): 178
+Mistake count: 0
+Beep interval (ms): 6306
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 6120
+---- LIVE TEST STATS ----
+Remaining time (s): 173
+Mistake count: 0
+Beep interval (ms): 6120
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 5934
+---- LIVE TEST STATS ----
+Remaining time (s): 168
+Mistake count: 0
+Beep interval (ms): 5934
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 5748
+---- LIVE TEST STATS ----
+Remaining time (s): 163
+Mistake count: 0
+Beep interval (ms): 5748
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+---- LIVE TEST STATS ----
+Remaining time (s): 158
+Mistake count: 0
+Beep interval (ms): 5748
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 5593
+---- LIVE TEST STATS ----
+Remaining time (s): 153
+Mistake count: 0
+Beep interval (ms): 5593
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 5406
+---- LIVE TEST STATS ----
+Remaining time (s): 148
+Mistake count: 0
+Beep interval (ms): 5406
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 5251
+---- LIVE TEST STATS ----
+Remaining time (s): 143
+Mistake count: 0
+Beep interval (ms): 5251
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 5096
+---- LIVE TEST STATS ----
+Remaining time (s): 138
+Mistake count: 0
+Beep interval (ms): 5096
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 4941
+---- LIVE TEST STATS ----
+Remaining time (s): 133
+Mistake count: 0
+Beep interval (ms): 4941
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 4786
+---- LIVE TEST STATS ----
+Remaining time (s): 128
+Mistake count: 0
+Beep interval (ms): 4786
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 4631
+---- LIVE TEST STATS ----
+Remaining time (s): 123
+Mistake count: 0
+Beep interval (ms): 4631
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 4506
+---- LIVE TEST STATS ----
+Remaining time (s): 119
+Mistake count: 0
+Beep interval (ms): 4506
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 4351
+Beep interval set to: 4227
+---- LIVE TEST STATS ----
+Remaining time (s): 114
+Mistake count: 0
+Beep interval (ms): 4227
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 4103
+---- LIVE TEST STATS ----
+Remaining time (s): 109
+Mistake count: 0
+Beep interval (ms): 4103
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 3979
+---- LIVE TEST STATS ----
+Remaining time (s): 104
+Mistake count: 0
+Beep interval (ms): 3979
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 3855
+---- LIVE TEST STATS ----
+Remaining time (s): 99
+Mistake count: 0
+Beep interval (ms): 3855
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 3731
+Beep interval set to: 3637
+---- LIVE TEST STATS ----
+Remaining time (s): 94
+Mistake count: 0
+Beep interval (ms): 3637
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 3513
+---- LIVE TEST STATS ----
+Remaining time (s): 89
+Mistake count: 0
+Beep interval (ms): 3513
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 3420
+---- LIVE TEST STATS ----
+Remaining time (s): 84
+Mistake count: 0
+Beep interval (ms): 3420
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 3296
+Beep interval set to: 3203
+---- LIVE TEST STATS ----
+Remaining time (s): 79
+Mistake count: 0
+Beep interval (ms): 3203
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 3079
+Beep interval set to: 2986
+---- LIVE TEST STATS ----
+Remaining time (s): 74
+Mistake count: 0
+Beep interval (ms): 2986
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 2893
+---- LIVE TEST STATS ----
+Remaining time (s): 69
+Mistake count: 0
+Beep interval (ms): 2893
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 430
+Module 0 (0x11) UNSOLVED | polls: 86
+Module 1 (0x12) UNSOLVED | polls: 86
+Module 2 (0x13) UNSOLVED | polls: 86
+Module 3 (0x14) UNSOLVED | polls: 86
+Module 4 (0x15) UNSOLVED | polls: 86
+-------------------------
+Beep interval set to: 2831
+Beep interval set to: 2737
+---- LIVE TEST STATS ----
+Remaining time (s): 65
+Mistake count: 0
+Beep interval (ms): 2737
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 2644
+Beep interval set to: 2582
+---- LIVE TEST STATS ----
+Remaining time (s): 60
+Mistake count: 0
+Beep interval (ms): 2582
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 2489
+Beep interval set to: 2427
+---- LIVE TEST STATS ----
+Remaining time (s): 55
+Mistake count: 0
+Beep interval (ms): 2427
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 2334
+Beep interval set to: 2272
+---- LIVE TEST STATS ----
+Remaining time (s): 50
+Mistake count: 0
+Beep interval (ms): 2272
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 2210
+Beep interval set to: 2148
+---- LIVE TEST STATS ----
+Remaining time (s): 45
+Mistake count: 0
+Beep interval (ms): 2148
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 2055
+Beep interval set to: 1993
+Beep interval set to: 1931
+---- LIVE TEST STATS ----
+Remaining time (s): 40
+Mistake count: 0
+Beep interval (ms): 1931
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 1868
+Beep interval set to: 1837
+---- LIVE TEST STATS ----
+Remaining time (s): 35
+Mistake count: 0
+Beep interval (ms): 1837
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 1775
+Beep interval set to: 1713
+Beep interval set to: 1651
+---- LIVE TEST STATS ----
+Remaining time (s): 30
+Mistake count: 0
+Beep interval (ms): 1651
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 1620
+Beep interval set to: 1558
+Beep interval set to: 1527
+---- LIVE TEST STATS ----
+Remaining time (s): 25
+Mistake count: 0
+Beep interval (ms): 1527
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 1465
+Beep interval set to: 1403
+Beep interval set to: 1372
+Beep interval set to: 1341
+---- LIVE TEST STATS ----
+Remaining time (s): 20
+Mistake count: 0
+Beep interval (ms): 1341
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 1279
+Beep interval set to: 1248
+Beep interval set to: 1217
+Beep interval set to: 1186
+---- LIVE TEST STATS ----
+Remaining time (s): 15
+Mistake count: 0
+Beep interval (ms): 1186
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 430
+Module 0 (0x11) UNSOLVED | polls: 86
+Module 1 (0x12) UNSOLVED | polls: 86
+Module 2 (0x13) UNSOLVED | polls: 86
+Module 3 (0x14) UNSOLVED | polls: 86
+Module 4 (0x15) UNSOLVED | polls: 86
+-------------------------
+Beep interval set to: 1124
+Beep interval set to: 1093
+Beep interval set to: 1062
+Beep interval set to: 1031
+---- LIVE TEST STATS ----
+Remaining time (s): 11
+Mistake count: 0
+Beep interval (ms): 1031
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 1000
+Beep interval set to: 1000
+Beep interval set to: 1000
+Beep interval set to: 1000
+Beep interval set to: 1000
+---- LIVE TEST STATS ----
+Remaining time (s): 6
+Mistake count: 0
+Beep interval (ms): 1000
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 430
+Module 0 (0x11) UNSOLVED | polls: 86
+Module 1 (0x12) UNSOLVED | polls: 86
+Module 2 (0x13) UNSOLVED | polls: 86
+Module 3 (0x14) UNSOLVED | polls: 86
+Module 4 (0x15) UNSOLVED | polls: 86
+-------------------------
+Beep interval set to: 1000
+Beep interval set to: 1000
+Beep interval set to: 1000
+Beep interval set to: 1000
+Beep interval set to: 1000
+---- LIVE TEST STATS ----
+Remaining time (s): 1
+Mistake count: 0
+Beep interval (ms): 1000
+Switch state: ON
+Failure handling: NO
+Detected modules: 5
+Total polls counted: 435
+Module 0 (0x11) UNSOLVED | polls: 87
+Module 1 (0x12) UNSOLVED | polls: 87
+Module 2 (0x13) UNSOLVED | polls: 87
+Module 3 (0x14) UNSOLVED | polls: 87
+Module 4 (0x15) UNSOLVED | polls: 87
+-------------------------
+Beep interval set to: 1000
+Master: Game lost!
+Master: Time ran out!
+---- TEST METRICS SUMMARY ----
+Discovery time (ms): 116
+Detected modules: 5
+Module 0 poll count: 4
+Module 1 poll count: 4
+Module 2 poll count: 4
+Module 3 poll count: 4
+Module 4 poll count: 4
+Total polls counted: 20
+Mistake count: 0
+-------------------------------
