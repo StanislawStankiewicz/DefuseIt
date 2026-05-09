@@ -14,6 +14,17 @@ Arduino-based multi-module bomb-defusal game. A single master controller discove
 
 - Transport: I²C (SDA/SCL) plus power (5 V or 3.3 V) and optional INT line for per-module LEDs.
 - Discovery: The Master performs a sweep (1–126) sending `CMD_IDENTIFY`. Modules with `ModuleComms::Slave` respond with `CMD_IDENTIFY` and are stored in the Master's address table.
+- Current module addresses:
+
+| Module | I²C Address | Sketch |
+| --- | --- | --- |
+| Symbols | `0x10` | `Symbols/Symbols.ino` |
+| SimonSays | `0x11` | `SimonSays/SimonSays.ino` |
+| Keypad | `0x12` | `Keypad/Keypad.ino` |
+| Switch | `0x13` | `Switch/Switch.ino` |
+| Labyrinth | `0x14` | `Labyrinth/Labyrinth.ino` |
+| Radio | `0x15` | `Radio/Radio.ino` |
+
 - Runtime commands:
 	- `CMD_START_GAME` / `CMD_END_GAME`
 	- `CMD_SET_VERSION` / `CMD_GET_VERSION`

@@ -1,6 +1,6 @@
 #include <ModuleComms.h>
 
-const uint8_t SLAVE_ADDRESS = 0x14;
+const uint8_t SLAVE_ADDRESS = 0x13;
 const uint8_t SWITCH_PIN = 8;
 const uint8_t RGB_PIN_R = 9;
 const uint8_t RGB_PIN_G = 10;

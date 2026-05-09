@@ -57,7 +57,7 @@ bool needsInitialRender = false;
 void gameLoop();
 void resetGameState();
 
-#define SLAVE_ADDRESS 0x15
+#define SLAVE_ADDRESS 0x14
 Slave slave(SLAVE_ADDRESS, gameLoop, resetGameState, VICTORY_PIN);
 
 void resetGameState() {

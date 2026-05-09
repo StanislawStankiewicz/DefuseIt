@@ -95,7 +95,7 @@ void resetState();
 void updateDisplay();
 
 // Module Communication
-#define SLAVE_ADDRESS 0x16
+#define SLAVE_ADDRESS 0x15
 Slave slave(SLAVE_ADDRESS, gameLoop, resetState, LED_PIN);
 
 void setup() {
