@@ -1,5 +1,6 @@
 thesis/examples/
 .vscode/
+.venv/
 
 thesis/thesis.aux
 thesis/thesis.bbl
