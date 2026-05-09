@@ -323,7 +323,6 @@ void updateGameTimer() {
 }
 
 void handleBeeps() {
-  // Handle beeps
   if (millis() - lastBeepTime >= beepInterval) {
     beep();
     lastBeepTime = millis();
