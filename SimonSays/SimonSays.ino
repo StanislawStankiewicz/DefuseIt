@@ -158,7 +158,8 @@ void handleUnengaged() {
         debugButtonEvent(F("RELEASE"), lastPressedButton);
         setFeedback(lastPressedButton, false, true);
         
-        if (lastPressedButton == sequence[0]) {
+        int expectedButton = mapColorByMistakes(sequence[0], slave.getMistakeCount());
+        if (lastPressedButton == expectedButton) {
             currentLength = 2; // Start game by showing 2 steps
             stateTimer = millis();
             debugStateTransition(currentState, ROUND_CLEAR);
