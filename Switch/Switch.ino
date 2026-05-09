@@ -78,6 +78,7 @@ void setup() {
 	pinMode(RGB_PIN_B, OUTPUT);
 	Serial.begin(9600);
 	randomSeed(analogRead(A0) ^ millis());
+	setColor(0, 0, 0);
 	slave.begin();
 }
 
