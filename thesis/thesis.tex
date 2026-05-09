@@ -524,7 +524,7 @@ void loop() {
 \end{lstlisting}
 
 
-\subsection{Moduł radiowy} Stanowi łamigłówkę opartą na dekodowaniu alfabetu Morse'a i strojeniu częstotliwości radiowej. Na module prezentowany jest sygnał nawigacyjny w postaci migającej diody LED wysokiej jasności, odwzorowującej rytm kodu Morse'a. Zadaniem gracza jest odsłuchanie i rozkodowanie sekwencji sygnałów w celu ustalenia słowa kluczowego, a następnie odszukanie powiązanej z nim częstotliwości nadajnika w materiałach referencyjnych i wybranie jej za pomocą inkrementalnego enkodera obrotowego. Poprawne dostrojenie transpondera kończy zagadkę.
+\subsection{Moduł radia} Stanowi łamigłówkę opartą na dekodowaniu alfabetu Morse'a i strojeniu częstotliwości radiowej. Na module prezentowany jest sygnał nawigacyjny w postaci migającej diody LED wysokiej jasności, odwzorowującej rytm kodu Morse'a. Zadaniem gracza jest odsłuchanie i rozkodowanie sekwencji sygnałów w celu ustalenia słowa kluczowego, a następnie odszukanie powiązanej z nim częstotliwości nadajnika w materiałach referencyjnych i wybranie jej za pomocą inkrementalnego enkodera obrotowego. Poprawne dostrojenie transpondera kończy zagadkę.
 
 Koordynację wszystkich systemów modułu — odświeżania ekranu, obsługi enkodera oraz generowania sygnałów świetlnych — realizuje funkcja \texttt{gameLoop()}. Jest ona wywoływana asynchronicznie przez bibliotekę komunikacyjną, co pozwala na zachowanie responsywności węzła przy jednoczesnym wykonywaniu logiki gry.
 
@@ -771,17 +771,9 @@ ActionType determineAction(ColorId color, uint8_t version) {
 \end{lstlisting}
 
 \chapter{Testy i działanie systemu}
-Celem testów było sprawdzenie poprawności komunikacji I$^2$C, niezawodności logiki modułów oraz efektywności wykorzystania pamięci mikrokontrolerów ATmega328P. Analiza wyników potwierdziła spełnienie wymagań funkcjonalnych i niefunkcjonalnych.
+Niniejszy rozdział zawiera szczegółową ocenę systemu DefuseIt z dwóch perspektyw: \textbf{(1)} analizy ograniczeń zasobów sprzętowych mikrokontrolerów ATmega328P oraz \textbf{(2)} empirycznej weryfikacji poprawności komunikacji I$^2$C, niezawodności logiki modułów i precyzji odmierzania czasu. Obydwie części uzupełniają się wzajemnie — pierwsze sekcje pokazują, w jakich warunkach hardware'owych operuje system, podczas gdy testy demonstrują spełnienie wymagań funkcjonalnych bez przekroczenia limitów sprzętowych.
 
-Specyfika mikrokontrolerów AVR wymusza inną metodę testowania niż w przypadku komputerów PC. Podstawową weryfikacją jest pomyślna kompilacja kodu (\texttt{avr-gcc}), która sprawdza nie tylko składnię, ale i zajętość pamięci Flash oraz SRAM. Raporty kompilatora pozwalają upewnić się, że program mieści się w restrykcyjnych limitach sprzętowych.
-
-Dodatkowym narzędziem diagnostycznym wykorzystywanym podczas prac nad prototypem była płytka Arduino Uno R4 WiFi, pełniąca rolę przekaźnika UART-USB. Ze względu na to, że programowane mikrokontrolery ATmega328P nie posiadały własnego połączenia szeregowego z komputerem (programowanie odbywało się przez programator ISP USBasp), do podglądu komunikatów diagnostycznych w czasie rzeczywistym podłączano linie TX/RX testowanego modułu do pinów płytki Arduino Uno R4, która przekazywała dane do komputera PC przez port szeregowy z prędkością 9600 baud. Umożliwiło to monitorowanie stanów wewnętrznych programu (m.in. wykrytych adresów I$^2$C, statusów modułów, wartości timerów) bez ingerencji w działanie systemu.
-
-Uzupełnieniem weryfikacji kompilacyjnej były testy integracyjne przeprowadzone na fizycznym prototypie systemu:
-\begin{itemize}
-  \item \textbf{Walidacja wydajności kanału I$^2$C:} Testy z udziałem wszystkich 5 modułów Slave przy taktowaniu 100\,kHz potwierdziły stabilność komunikacji. Sekwencyjne odpytywanie przez jednostkę Master nie powodowało utraty danych ani błędów w przesyłanych ramkach protokołu \texttt{ModuleComms}.
-  \item \textbf{Pomiar zużycia pamięci:} Wykorzystanie pamięci Flash i SRAM utrzymano na bezpiecznym poziomie dzięki alokacji danych statycznych w pamięci programu (dyrektywa \texttt{PROGMEM}).
-\end{itemize}
+Specyfika mikrokontrolerów AVR wymusza odmienną metodykę testowania niż w przypadku komputerów PC. Základową weryfikacją jest pomyślna kompilacja kodu (\texttt{avr-gcc}), która sprawdza nie tylko składnię, ale i zajętość pamięci Flash oraz SRAM — raporty kompilatora pozwalają wstępnie upewnić się, że program będzie mieścił się w dostępnych limitach. Dodatkowo, do podglądu komunikatów diagnostycznych w czasie rzeczywistym wykorzystywano płytkę Arduino Uno R4 WiFi jako przekaźnik UART-USB, monitorując stany wewnętrzne (adresy I$^2$C, statusy modułów, wartości timerów). Uzupełnieniem weryfikacji kompilacyjnej były testy integracyjne przeprowadzone na fizycznym prototypie, obejmujące zarówno walidację wydajności kanału I$^2$C, jak i pomiary rzeczywistego zużycia pamięci w warunkach operacyjnych.
 
 \section{Analiza wykorzystania zasobów sprzętowych}
 Wybór 8-bitowego mikrokontrolera ATmega328P jako platformy bazowej narzucił rygorystyczne wymagania dotyczące optymalizacji kodu. Poniższa tabela (Tabela~\ref{tab:memory_usage_summary}) zestawia ostateczne wyniki kompilacji dla wszystkich komponentów systemu, obrazując stopień wykorzystania dostępnej pamięci Flash oraz SRAM.
@@ -822,8 +814,10 @@ Największe wyzwanie pod kątem zasobów Flash stanowił moduł labiryntu, co wy
 
 Warto również zauważyć, że relatywnie wysokie użycie pamięci Flash w module radiowym (47\%) wynika z przechowywania sekwencji alfabetu Morse'a w postaci czytelnych ciągów znaków (np. kropki i kreski jako typ danych \texttt{char}). Rozwiązanie to wybrano ze względu na przejrzystość kodu i łatwość wprowadzania zmian. W przypadku konieczności dalszej optymalizacji, zasoby te można by zredukować poprzez zastosowanie kodowania bitowego (bit-packing), gdzie każda kropka i kreska reprezentowana byłaby przez pojedynczy bit, jednak przy obecnej skali projektu nie było to wymagane.
 
-\section{Wyniki testów sprzętowych}
-W niniejszym rozdziale przedstawiono wyniki empirycznej weryfikacji warstwy sprzętowej systemu. Program testowy został zaprojektowany w celu walidacji kluczowych parametrów funkcjonalnych, takich jak stabilność protokołów komunikacyjnych, mechanizmy obsługi błędów oraz precyzja odmierzania czasu. Podsumowanie przeprowadzonych scenariuszy testowych zestawiono w Tabeli~\ref{tab:test_results}.
+\section{Weryfikacja systemu poprzez testy i pomiary}
+Poniższe sekcje prezentują wyniki empirycznej weryfikacji warstwy sprzętowej i komunikacyjnej systemu. Przeprowadzone scenariusze testowe obejmują walidację kluczowych parametrów funkcjonalnych (stabilność protokołów I$^2$C, obsługa błędów, precyzja timera), a następnie analizę wydajności systemu na podstawie szczegółowych logów z testów operacyjnych.
+
+\subsection{Wyniki testów sprzętowych}
 
 \begin{longtable}{|l|r|p{10cm}|}
   \caption{Wyniki testów sprzętowych systemu modularnego} \label{tab:test_results} \\
@@ -859,10 +853,10 @@ W niniejszym rozdziale przedstawiono wyniki empirycznej weryfikacji warstwy sprz
 
 \end{longtable}
 
-\subsection{Szczegółowa analiza wyników}
+Tabela~\ref{tab:test_results} zawiera podsumowanie przeprowadzonych scenariuszy testowych oraz krótką charakterystykę każdego testu.
 
 \subsubsection{Test T01: Powtarzalność procesu inicjalizacji}
-Celem testu była weryfikacja stabilności procedury automatycznej adresacji i wykrywania modułów na magistrali I\textsuperscript{2}C. Przeprowadzono 10 cykli zimnego startu systemu, monitorując poprawność identyfikacji wszystkich urządzeń peryferyjnych przez jednostkę centralną (Master). Uzyskano wynik \textbf{10/10}. Wszystkie próby przebiegły pomyślnie — każdy moduł udzielił potwierdzenia ACK w odpowiedzi na ramkę \texttt{CMD\_IDENTIFY}, a po uruchomieniu systemu wszystkie jednostki zgłosiły gotowość do pracy.
+Celem testu była weryfikacja stabilności procedury automatycznej adresacji i wykrywania modułów na magistrali I$^2$C. Przeprowadzono 10 cykli zimnego startu systemu, monitorując poprawność identyfikacji wszystkich urządzeń peryferyjnych przez jednostkę centralną (Master). Uzyskano wynik \textbf{10/10}. Wszystkie próby przebiegły pomyślnie — każdy moduł udzielił potwierdzenia ACK w odpowiedzi na ramkę \texttt{CMD\_IDENTIFY}, a po uruchomieniu systemu wszystkie jednostki zgłosiły gotowość do pracy.
 
 \subsubsection{Test T02: Obsługa stanów awaryjnych}
 W ramach testu sprawdzono zdolność jednostki Master do rejestracji i dystrybucji zmiennej stanu błędu (\texttt{mistakeCount}) po wystąpieniu zdarzenia \texttt{STATUS\_FAILED} w dowolnym węźle. Wszystkie testy przebiegły pomyślnie, a system poprawnie zareagował na symulowane błędy, aktualizując stan globalny i przekazując informację do pozostałych modułów.
@@ -872,6 +866,32 @@ Weryfikacji poddano warunek zakończenia sesji, polegający na zgłoszeniu statu
 
 \subsubsection{Test T04: Weryfikacja procedury przekroczenia czasu}
 Badanie miało na celu zweryfikowanie poprawności działania mechanizmu zakończenia sesji oraz ilościowe określenie odchyleń pomiaru czasu. W pięciu przeprowadzonych próbach zaobserwowano odchylenia czasu w zakresie 2–6 s względem czasu referencyjnego.
+
+\subsection{Analiza wydajności i częstotliwości komunikacji}
+
+Charakteryzacja pełnego działania systemu wymaga szczegółowej analizy wydajności i intensywności komunikacji I$^2$C. Przeprowadzono analizę danych zbieranych przez system w trakcie 300-sekundowych przebiegów testowych. W ramach trzech niezależnych przebiegów testowych zebrano po 61 pięciosekundowych fragmentów danych w każdym (razem 183), umożliwiając ocenę granularnych metryk dotyczących częstotliwości opytania modułów, czasów odkrywania i ogólnej reaktywności systemu. W Tabeli~\ref{tab:performance_metrics} zestawiono kluczowe parametry pomiarów.
+
+\begin{table}[h]
+\centering
+\caption{Metryki wydajności systemu I\textsuperscript{2}C i pętli głównej} \label{tab:performance_metrics}
+\begin{tabular}{|l|r|r|}
+\hline
+\textbf{Parametr} & \textbf{Wartość} & \textbf{Jednostka} \\
+\hline
+Średni czas wykrywania modułów & 115 & ms \\
+\hline
+Liczba odpytań w 5 sekund & 434 & zapytań \\
+\hline
+Średnia częstotliwość odpytań & 86,8 & Hz (całkowita) \\
+\hline
+Średnia częstotliwość na moduł & 17,36 & Hz \\
+\hline
+Średni okres cyklu opytania na moduł & 57,6 & ms \\
+\hline
+\end{tabular}
+\end{table}
+
+Pomiary wykazują, że system utrzymuje stałą częstotliwość odpytania każdego z modułów na poziomie ~17 Hz, co odpowiada okresowi cyklu około 57–58 ms. Czas odkrywania modułów na magistrali I\textsuperscript{2}C wynoszący średnio 115 ms jest akceptowalny dla zastosowania o charakterze interaktywnym, gdzie elementy UI aktualizują się co kilkaset milisekund. Wynik ten potwierdza efektywność implementacji procedury \texttt{discoverModules()} w kodzie modułu nadrzędnego.
 
 \chapter{Podsumowanie i wnioski}
 Celem pracy było zaprojektowanie modularnego systemu zadań logicznych na mikrokontrolerach ATmega328P. Niniejsza praca potwierdziła, że architektura nadrzędno-podrzędna (ang. \textit{Master-Slave}) i magistrala I$^2$C pozwalają na stworzenie stabilnego i skalowalnego systemu. Oprogramowanie umożliwia koordynację wielu modułów przy zachowaniu płynności interfejsu.
