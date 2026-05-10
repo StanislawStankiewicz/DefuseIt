@@ -253,7 +253,7 @@ Biblioteka \texttt{ModuleComms} zarządza komunikacją na niskim poziomie, wykor
 \begin{enumerate}
   \item \textbf{Faza wykrywania (ang. \textit{Discovery}):} Wywołanie pętli wysyłkowej z komendą 0x07 (\texttt{CMD\_IDENTIFY}), skanującej adresy od 1 do 126 z zapytaniem o rzetelną odpowiedź ACK sprzętu.
   \item \textbf{Faza propagacji i rejestracji startu (ang. \textit{Propagation and Start}):} Przeprowadzenie inicjacyjnej transakcji rozgłaszanej z flagą \texttt{CMD\_START\_GAME}.
-  \item \textbf{Faza testowania cyklicznego stanu (ang. \textit{Run Loop}):} Ciągłe odpytywanie modułów o ich stan logiczny, przechwytywanie zdarzeń błędu (\texttt{STATUS\_FAILED}) i sukcesu (\texttt{STATUS\_PASSED}).
+  \item \textbf{Faza testowania cyklicznego stanu (ang. \textit{Run Loop}):} Ciągłe odpytywanie modułów o ich stan logiczny, przechwytywanie zdarzeń błędu i sukcesu.
 \end{enumerate}
 
 \section{Konstrukcja i montaż modułów}
@@ -274,7 +274,7 @@ W niniejszej sekcji przedstawiono diagramy klas dokumentujące strukturę obiekt
 
 W celu sformalizowania struktury oprogramowania oraz ułatwienia procesu implementacji, posłużono się notacją UML (\textit{Unified Modeling Language}). Diagram klas jest diagramem strukturalnym, przedstawiającym system za pomocą wizualizacji atrybutów, metod oraz relacji pomiędzy klasami. Jest on powszechnie stosowanym narzędziem w projektowaniu systemów opartych na programowaniu obiektowym.
 
-Centralnym elementem architektury komunikacyjnej jest autorska biblioteka
+Centralnym elementem architektury komunikacyjnej jest autorska biblioteka\linebreak
 \texttt{ModuleComms}, której strukturę obiektową przedstawiono na Rysunku~\ref{fig:class_modulecomms}. Diagram prezentuje dwie główne klasy --- \texttt{Master} oraz \texttt{Slave} --- wraz z typami pomocniczymi definiującymi protokół komunikacyjny.
 
 \begin{figure}[H]
@@ -332,7 +332,7 @@ Zaprojektowany system działa w architekturze silnie rozproszonej ze scentralizo
 \section{Autorska biblioteka komunikacyjna ModuleComms}
 Biblioteka \texttt{ModuleComms} powstała, aby ujednolicić obsługę komunikacji I$^2$C i ograniczyć powielanie kodu. Bez niej każdy moduł musiałby samodzielnie zarządzać buforowaniem danych i dekodowaniem ramek protokołu. Biblioteka przejmuje te zadania, udostępniając funkcje do sprawdzania stanu modułów i obsługi logiki gry.
 
-W protokole komunikacyjnym każde polecenie i każdy status to pojedynczy bajt. Komendy wywołujące akcję po stronie serwera to np. \texttt{CMD\_START\_GAME} czy \texttt{CMD\_IDENTIFY}, a flagi stanu modułu to \texttt{STATUS\_UNSOLVED}, \texttt{STATUS\_PASSED} i \texttt{STATUS\_FAILED}. Dzięki temu zamiast przesyłać przez magistralę pełne tekstowe identyfikatory poleceń wystarczy pojedynczy bajt --- co zmniejsza liczbę przesyłanych danych i zwiększa przepustowość komunikacji.
+W protokole komunikacyjnym każde polecenie i każdy status to pojedynczy bajt. Komendy wywołujące akcję po stronie serwera to np. \texttt{CMD\_START\_GAME} czy \texttt{CMD\_IDENTIFY}, a flagi stanu modułu to \texttt{STATUS\_UNSOLVED}, \texttt{STATUS\_PASSED} \linebreak i \texttt{STATUS\_FAILED}. Dzięki temu zamiast przesyłać przez magistralę pełne tekstowe identyfikatory poleceń wystarczy pojedynczy bajt --- co zmniejsza liczbę przesyłanych danych i zwiększa przepustowość komunikacji.
 Listing~\ref{lst:modulecomms-protocol-defs} prezentuje komplet kodów komend i statusów używanych przez warstwę transportową biblioteki.
 \begin{lstlisting}[language=C++, caption={Definicje protokołu transportowego I$^2$C w bibliotece ModuleComms}, label={lst:modulecomms-protocol-defs}]
 #define CMD_START_GAME            0x01
@@ -353,7 +353,7 @@ Listing~\ref{lst:modulecomms-protocol-defs} prezentuje komplet kodów komend i s
 
 Biblioteka udostępnia dwie główne klasy: \texttt{Master} --- dla jednostki nadrzędnej --- oraz \texttt{Slave} --- dla modułów podrzędnych.
 
-Klasa \texttt{Master} odpowiada za koordynację systemu: skanuje magistralę w poszukiwaniu modułów (\texttt{discoverModules()}), przesyła pozostały czas gry (\texttt{sendRemainingSeconds()}) oraz rozgłasza liczbę błędów (\texttt{broadcastMistakeCount()}). Wykaz adresów modułów przechowywany jest w tablicy, co eliminuje potrzebę dynamicznej alokacji pamięci.
+Klasa \texttt{Master} odpowiada za koordynację systemu: skanuje magistralę \linebreak w poszukiwaniu modułów (\texttt{discoverModules()}), przesyła pozostały \linebreak czas gry (\texttt{sendRemainingSeconds()}) oraz rozgłasza liczbę błędów \linebreak (\texttt{broadcastMistakeCount()}). Wykaz adresów modułów przechowywany jest w tablicy, co eliminuje potrzebę dynamicznej alokacji pamięci.
 
 Listing~\ref{lst:modulecomms-master-interface} pokazuje publiczny interfejs klasy \texttt{Master}, odpowiedzialnej za orkiestrację rozgrywki.
 \begin{lstlisting}[language=C++, caption={Interfejs główny platformy nadzorującej (ModuleComms.h)}, label={lst:modulecomms-master-interface}]
@@ -412,7 +412,7 @@ private:
 };
 \end{lstlisting}
 
-Jednostka Master zarządza komunikacją poprzez cykliczne odpytywanie wszystkich modułów podłączonych do magistrali. Wykorzystuje do tego funkcję \texttt{Wire.requestFrom()}, która umożliwia odczyt statusu z każdego węzła. Jeżeli moduł zgłosi stan \texttt{STATUS\_PASSED}, Master przestaje go odpytywać, uznając zadanie za wykonane. W przypadku zgłoszenia \texttt{STATUS\_FAILED} licznik błędów systemu zostaje zwiększony. Po przekroczeniu dopuszczalnej liczby błędów lub upływie czasu Master wysyła do wszystkich modułów sygnał zakończenia gry, co powoduje zablokowanie ich logiki i wywołanie funkcji resetującej stan urządzenia.
+Jednostka Master zarządza komunikacją poprzez cykliczne odpytywanie wszystkich modułów podłączonych do magistrali. Wykorzystuje do tego funkcję \linebreak \texttt{Wire.requestFrom()}, która umożliwia odczyt statusu z każdego węzła. Jeżeli moduł zgłosi stan \texttt{STATUS\_PASSED}, Master przestaje go odpytywać, uznając zadanie za wykonane. W przypadku zgłoszenia \texttt{STATUS\_FAILED} licznik błędów systemu zostaje zwiększony. Po przekroczeniu dopuszczalnej liczby błędów lub upływie czasu Master wysyła do wszystkich modułów sygnał zakończenia gry, co powoduje zablokowanie ich logiki i wywołanie funkcji resetującej stan urządzenia.
 
 \section{Wielozadaniowość kooperatywna i wstrzymania nieblokujące}
 Standardowe podejście w środowisku Arduino do odmierzania czasu opiera się na funkcji \texttt{delay()}. Skutkuje ona jednak zatrzymaniem pracy procesora na określony czas (ang. \textit{busy waiting}), co uniemożliwia wykonywanie innych zadań w tle. Ze względu na asynchroniczny model komunikacji I$^2$C stosowany w niniejszej pracy, użycie blokującego oczekiwania doprowadziłoby do utraty nadchodzących pakietów danych i żądań ze sterownika Master, co skutkowałoby błędami desynchronizacji (ang. \textit{timeout}).
@@ -551,7 +551,7 @@ void loop() {
 \end{lstlisting}
 
 
-\subsection{Moduł sekwencyjny} Stanowi implementację klasycznej łamigłówki typu \textit{Simon Mówi}, w której gracz musi zapamiętać i bezbłędnie odwzorować rosnącą sekwencję sygnałów świetlno-dźwiękowych. Warstwa sprzętowa modułu opiera się na czterech przyciskach mechanicznych przypisanych do kolorów oraz przetworniku piezoelektrycznym. Przebieg rozgrywki podzielono na fazy prezentacji (\texttt{SHOWING}) oraz oczekiwania na wejście (\texttt{WAITING\_INPUT}), zarządzane przez maszynę stanów.
+\subsection{Moduł sekwencyjny} Implementuje klasyczną łamigłówkę typu \textit{Simon Mówi}, w której gracz musi zapamiętać i bezbłędnie odwzorować rosnącą sekwencję sygnałów świetlno-dźwiękowych. Warstwa sprzętowa modułu opiera się na czterech przyciskach mechanicznych przypisanych do kolorów oraz przetworniku piezoelektrycznym. Przebieg rozgrywki podzielono na fazy prezentacji (\texttt{SHOWING}) oraz oczekiwania na wejście (\texttt{WAITING\_INPUT}), zarządzane przez maszynę stanów.
 
 Kluczowym mechanizmem utrudniającym zadanie jest dynamiczne przypisywanie kolorów przycisków w zależności od aktualnej liczby błędów popełnionych w całej grze. Funkcja \texttt{mapColorByMistakes()} sprawia, że ten sam kolor sygnału może wymagać naciśnięcia innego przycisku w miarę narastania presji czasu i liczby pomyłek przesyłanych magistralą I$^2$C.
 
@@ -596,7 +596,7 @@ int mapColorByMistakes(int shownColor, uint8_t mistakeCount) {
 }
 \end{lstlisting}
 
-\subsection{Moduł arytmetyczny} Stanowi łamigłówkę matematyczną, w której zadaniem gracza jest rozwiązanie proceduralnie generowanego zadania i wprowadzenie wyniku za pomocą klawiatury. Warstwa sprzętowa modułu składa się z 16-klawiszowej klawiaturze membranowej w topologii matrycowej oraz alfanumerycznego wyświetlacza LCD 16x2. W przeciwieństwie do założeń wykorzystujących adapter I$^2$C, w ostatecznej implementacji zdecydowano się na bezpośrednie sterowanie równoległe (6 linii sterujących), co pozwoliło na uproszczenie warstwy programowej kosztem wykorzystania większej liczby pinów mikrokontrolera (od D11 do A2).
+\subsection{Moduł arytmetyczny} Realizuje łamigłówkę matematyczną, w której zadaniem gracza jest rozwiązanie proceduralnie generowanego zadania i wprowadzenie wyniku za pomocą klawiatury. Warstwa sprzętowa modułu składa się z 16-klawiszowej klawiaturze membranowej w topologii matrycowej oraz alfanumerycznego wyświetlacza LCD 16x2. W przeciwieństwie do założeń wykorzystujących adapter I$^2$C, w ostatecznej implementacji zdecydowano się na bezpośrednie sterowanie równoległe (6 linii sterujących), co pozwoliło na uproszczenie warstwy programowej kosztem wykorzystania większej liczby pinów mikrokontrolera (od D11 do A2).
 
 Główna pętla gry \texttt{gameLoop()} zarządza stanem wyświetlacza, czasem oczekiwania po błędzie oraz interpretacją wejść z klawiatury.
 
@@ -663,7 +663,7 @@ char scanKeypad() {
 \end{lstlisting}
 
 
-\subsection{Moduł z przełącznikiem} Stanowi prostą, lecz wymagającą precyzji zagadkę, w której zadaniem gracza jest wykonanie właściwej akcji na fizycznym przełączniku dźwigniowym w oparciu o aktualny kolor podświetlenia diody RGB. W zależności od koloru i numeru wersji rozgrywki (\texttt{version}), moduł oczekuje jednej z dwóch akcji: szybkiego przełączenia (\textit{Click}) lub przytrzymania przełącznika (\textit{Hold}) do momentu wystąpienia konkretnej cyfry na liczniku głównym.
+\subsection{Moduł z przełącznikiem} Realizuje prostą, lecz wymagającą precyzji zagadkę, w której zadaniem gracza jest wykonanie właściwej akcji na fizycznym przełączniku dźwigniowym w oparciu o aktualny kolor podświetlenia diody RGB. W zależności od koloru i numeru wersji rozgrywki (\texttt{version}), moduł oczekuje jednej z dwóch akcji: szybkiego przełączenia (\textit{Click}) lub przytrzymania przełącznika (\textit{Hold}) do momentu wystąpienia konkretnej cyfry na liczniku głównym.
 
 Koordynację stanów modułu realizuje funkcja \texttt{gameLoop()}, która monitoruje fizyczny stan pinu wejściowego i w zależności od wybranego trybu wywołuje procedury przetwarzające czas trwania interakcji.
 
@@ -708,7 +708,7 @@ ActionType determineAction(ColorId color, uint8_t version) {
 }
 \end{lstlisting}
 
-\subsection{Moduł labiryntu} Stanowi przestrzenną łamigłówkę nawigacyjną, w której gracz porusza się wewnątrz wirtualnego labiryntu za pomocą trzech przycisków (ruch na wprost oraz obroty w prawo lub w lewo). Interfejs graficzny oparto na wyświetlaczu OLED 128x64 pikseli. Co istotne, w przeciwieństwie do innych modułów, system ten komunikuje się z ekranem za pomocą szybkiej magistrali SPI (piny \texttt{MOSI}, \texttt{CLK}, \texttt{CS}, \texttt{DC}, \texttt{RST}). Wybór tego standardu zamiast I$^2$C podyktowany był nie tylko wyższą przepustowością niezbędną do odświeżania pełnoekranowych bitmap, ale przede wszystkim ograniczeniem sprzętowym mikrokontrolera. ATmega328P posiada tylko jeden interfejs I$^2$C, który w tym przypadku musi stale pracować w trybie Slave, by odbierać komendy od Mastera. Równoczesne pełnienie roli Mastera dla wyświetlacza byłoby na tym układzie praktycznie niemożliwe.
+\subsection{Moduł labiryntu} Implementuje przestrzenną łamigłówkę nawigacyjną, w której gracz porusza się wewnątrz wirtualnego labiryntu za pomocą trzech przycisków (ruch na wprost oraz obroty w prawo lub w lewo). Interfejs graficzny oparto na wyświetlaczu OLED 128x64 pikseli. Co istotne, w przeciwieństwie do innych modułów, system ten komunikuje się z ekranem za pomocą szybkiej magistrali SPI (piny \texttt{MOSI}, \texttt{CLK}, \texttt{CS}, \texttt{DC}, \texttt{RST}). Wybór tego standardu zamiast I$^2$C podyktowany był nie tylko wyższą przepustowością niezbędną do odświeżania pełnoekranowych bitmap, ale przede wszystkim ograniczeniem sprzętowym mikrokontrolera. ATmega328P posiada tylko jeden interfejs I$^2$C, który w tym przypadku musi stale pracować w trybie Slave, by odbierać komendy od Mastera. Równoczesne pełnienie roli Mastera dla wyświetlacza byłoby na tym układzie praktycznie niemożliwe.
 
 Logika modułu opiera się na współdzieleniu funkcji \texttt{canMove()} zarówno do walidacji przemieszczeń gracza, jak i do dynamicznego generowania rzutu perspektywicznego. Sercem koordynacji jest funkcja \texttt{gameLoop()}, która w sposób nieblokujący zarządza stanem wejść i wyjść.
 
@@ -756,9 +756,9 @@ void gameLoop() {
 }
 \end{lstlisting}
 
-Warstwa wizualna budowana jest z przeskalowanych bitmap definiujących ściany w różnej odległości i perspektywie. Wszystkie elementy graficzne (np. \texttt{epd\_bitmap\_closed\_left\_far}) przechowywane są w pamięci Flash za pomocą dyrektywy \texttt{PROGMEM}. Każda bitmapa o wymiarach 128x64 piksele zajmuje 1024 bajty (1\,KB) pamięci nieulotnej, gdzie pojedynczy bajt definiuje stan ośmiu sąsiednich pikseli w poziomie. Dzięki takiemu podejściu, mimo że zbiór grafik waży aż 15\,KB, moduł mieści się w pamięci ATmega328P, rezerwując jedynie niezbędny stały bufor ramki (1\,KB) w pamięci operacyjnej SRAM. Moduł zajmuje 28234 bajty (87\%) Flash oraz 792 bajty (38\%) SRAM.
+Warstwa wizualna budowana jest z przeskalowanych bitmap definiujących ściany w różnej odległości i perspektywie. Wszystkie elementy graficzne \linebreak (np. \texttt{epd\_bitmap\_closed\_left\_far}) przechowywane są w pamięci Flash za pomocą dyrektywy \texttt{PROGMEM}. Każda bitmapa o wymiarach 128x64 piksele zajmuje 1024 bajty (1\,KB) pamięci nieulotnej, gdzie pojedynczy bajt definiuje stan ośmiu sąsiednich pikseli w poziomie. Dzięki takiemu podejściu, mimo że zbiór grafik waży aż 15\,KB, moduł mieści się w pamięci ATmega328P, rezerwując jedynie niezbędny stały bufor ramki (1\,KB) w pamięci operacyjnej SRAM. Moduł zajmuje 28234 bajty (87\%) Flash oraz 792 bajty (38\%) SRAM.
 
-\subsection{Moduł radia} Stanowi łamigłówkę opartą na dekodowaniu alfabetu Morse'a i strojeniu częstotliwości radiowej. Na module prezentowany jest sygnał nawigacyjny w postaci migającej diody LED wysokiej jasności, odwzorowującej rytm kodu Morse'a. Zadaniem gracza jest odsłuchanie i rozkodowanie sekwencji sygnałów w celu ustalenia słowa kluczowego, a następnie odszukanie powiązanej z nim częstotliwości nadajnika w materiałach referencyjnych i wybranie jej za pomocą inkrementalnego enkodera obrotowego. Poprawne dostrojenie transpondera kończy zagadkę.
+\subsection{Moduł radia} Implementuje łamigłówkę opartą na dekodowaniu alfabetu Morse'a i strojeniu częstotliwości radiowej. Na module prezentowany jest sygnał nawigacyjny w postaci migającej diody LED wysokiej jasności, odwzorowującej rytm kodu Morse'a. Zadaniem gracza jest odsłuchanie i rozkodowanie sekwencji sygnałów w celu ustalenia słowa kluczowego, a następnie odszukanie powiązanej z nim częstotliwości nadajnika w materiałach referencyjnych i wybranie jej za pomocą inkrementalnego enkodera obrotowego. Poprawne dostrojenie transpondera kończy zagadkę.
 
 Koordynację wszystkich systemów modułu — odświeżania ekranu, obsługi enkodera oraz generowania sygnałów świetlnych — realizuje funkcja \texttt{gameLoop()}. Jest ona wywoływana asynchronicznie przez bibliotekę komunikacyjną, co pozwala na zachowanie responsywności węzła przy jednoczesnym wykonywaniu logiki gry.
 
@@ -797,7 +797,7 @@ const RadioTarget targets[] = {
 \end{lstlisting}
 
 \chapter{Testy i działanie systemu}
-Niniejszy rozdział zawiera szczegółową ocenę systemu z dwóch perspektyw, analizy ograniczeń zasobów sprzętowych mikrokontrolerów ATmega328P oraz  empirycznej weryfikacji poprawności komunikacji I$^2$C, niezawodności logiki modułów i precyzji odmierzania czasu. Obydwie części uzupełniają się wzajemnie — pierwsze sekcje pokazują, w jakich warunkach pracy operuje system, podczas gdy testy demonstrują spełnienie wymagań funkcjonalnych bez przekroczenia limitów sprzętowych.
+Niniejszy rozdział zawiera szczegółową ocenę systemu z dwóch perspektyw: analizy ograniczeń zasobów sprzętowych mikrokontrolerów ATmega328P oraz empirycznej weryfikacji poprawności komunikacji I$^2$C, niezawodności logiki modułów i precyzji odmierzania czasu. Obydwie części uzupełniają się wzajemnie — pierwsze sekcje pokazują, w jakich warunkach pracy operuje system, podczas gdy testy demonstrują spełnienie wymagań funkcjonalnych bez przekroczenia limitów sprzętowych.
 
 Specyfika mikrokontrolerów AVR wymusza odmienną metodykę testowania niż w przypadku klasycznych komputerów. Podstawową weryfikacją jest pomyślna kompilacja kodu, która sprawdza nie tylko składnię, ale i zajętość pamięci Flash oraz SRAM — raporty kompilatora pozwalają wstępnie upewnić się, że program będzie mieścił się w dostępnych limitach. Dodatkowo, do podglądu komunikatów diagnostycznych w czasie rzeczywistym wykorzystywano płytkę Arduino Uno R4 WiFi jako przekaźnik UART-USB, monitorując stany wewnętrzne (adresy I$^2$C, statusy modułów, pomiary czasu). Uzupełnieniem weryfikacji kompilacyjnej były testy integracyjne przeprowadzone na fizycznym prototypie, obejmujące zarówno walidację wydajności kanału I$^2$C, jak i pomiary rzeczywistego zużycia pamięci w warunkach operacyjnych.
 
@@ -836,7 +836,7 @@ Wybór 8-bitowego mikrokontrolera ATmega328P jako platformy bazowej narzucił ry
 \normalsize
 \vspace{1em}
 
-Największe wyzwanie pod kątem zasobów Flash stanowił moduł labiryntu, co wynika z konieczności przechowywania licznych map bitowych renderowanych w perspektywie 3D. Z kolei w przypadku pamięci SRAM kluczowym ograniczeniem okazała się obecność wyświetlaczy OLED w modułach radiowym oraz labiryntu. Powyższa analiza (Tabela~\ref{tab:memory_usage_summary}) uwzględnia fakt, że sterowniki graficzne (np. \texttt{Adafruit\_SH1106G}) rezerwują w czasie działania programu dodatkowy bufor ramki o rozmiarze 1024 bajtów (128x64 pikseli monochromatycznych). Ponieważ alokacja ta odbywa się dynamicznie wewnątrz klasy sterownika, nie jest ona raportowana przez kompilator jako stałe zużycie pamięci operacyjnej. W rzeczywistości, po doliczeniu tego bufora, moduł labiryntu operuje na granicy stabilności sprzętowej, wykorzystując blisko 90\% dostępnej pamięci SRAM (2\,KB), co wymusiło rezygnację z jakichkolwiek innych struktur dynamicznych i oparcie logiki wyłącznie na zmiennych lokalnych oraz stałych \texttt{PROGMEM}.
+Największe wyzwanie pod kątem zasobów Flash stanowił moduł labiryntu, co wynika z konieczności przechowywania licznych map bitowych renderowanych w perspektywie 3D. Natomiast w przypadku pamięci SRAM kluczowym ograniczeniem okazała się obecność wyświetlaczy OLED w modułach radiowym oraz labiryntu. Powyższa analiza (Tabela~\ref{tab:memory_usage_summary}) uwzględnia fakt, że sterowniki graficzne (np. \texttt{Adafruit\_SH1106G}) rezerwują w czasie działania programu dodatkowy bufor ramki o rozmiarze 1024 bajtów (128x64 pikseli monochromatycznych). Ponieważ alokacja ta odbywa się dynamicznie wewnątrz klasy sterownika, nie jest ona raportowana przez kompilator jako stałe zużycie pamięci operacyjnej. W rzeczywistości, po doliczeniu tego bufora, moduł labiryntu operuje na granicy stabilności sprzętowej, wykorzystując blisko 90\% dostępnej pamięci SRAM (2\,KB), co wymusiło rezygnację z jakichkolwiek innych struktur dynamicznych i oparcie logiki wyłącznie na zmiennych lokalnych oraz stałych \texttt{PROGMEM}.
 
 Warto również zauważyć, że relatywnie wysokie użycie pamięci Flash w module radiowym (47\%) wynika z przechowywania sekwencji alfabetu Morse'a w postaci czytelnych ciągów znaków (np. kropki i kreski jako typ danych \texttt{char}). Rozwiązanie to wybrano ze względu na przejrzystość kodu i łatwość wprowadzania zmian. W przypadku konieczności dalszej optymalizacji, zasoby te można by zredukować poprzez zastosowanie kodowania bitowego (bit-packing), gdzie każda kropka i kreska reprezentowana byłaby przez pojedynczy bit, jednak przy obecnej skali projektu nie było to wymagane.
 
@@ -929,7 +929,7 @@ Przebieg liczby odpytań w kolejnych seriach pomiarowych pokazany na Rysunku~\re
 Pomiary wykazują, że system utrzymuje stałą częstotliwość odpytania każdego z modułów na poziomie ~17 Hz, co odpowiada okresowi cyklu około 57–58 ms. Czas odkrywania modułów na magistrali I\textsuperscript{2}C wynoszący średnio 115 ms jest akceptowalny dla zastosowania o charakterze interaktywnym, gdzie elementy interfejsu aktualizują się co kilkaset milisekund. Wynik ten potwierdza efektywność implementacji procedury \texttt{discoverModules()} w kodzie modułu nadrzędnego.
 
 \chapter{Podsumowanie}
-Projekt systemu oraz przeprowadzone testy pozwoliły pomyślnie zrealizować główny cel pracy, jakim było zaprojektowanie i wdrożenie modularnego systemu zadań logicznych opartego na mikrokontrolerach ATmega328P. Opracowane rozwiązanie obejmuje jednostkę nadrzędną, pięć niezależnych modułów oraz warstwę komunikacyjną opartą na magistrali I$^2$C. Uzyskane wyniki potwierdziły poprawność przyjętej architektury, stabilność działania logiki modułów oraz skuteczność automatycznej detekcji i synchronizacji urządzeń w ramach jednej, spójnej topologii.
+Projekt systemu i przeprowadzone testy umożliwiły pomyślną realizację głównego celu pracy, jakim było zaprojektowanie i wdrożenie modularnego systemu zadań logicznych opartego na mikrokontrolerach ATmega328P. Opracowane rozwiązanie obejmuje jednostkę nadrzędną, pięć niezależnych modułów oraz warstwę komunikacyjną opartą na magistrali I$^2$C. Uzyskane wyniki potwierdziły poprawność przyjętej architektury, stabilność działania logiki modułów oraz skuteczność automatycznej detekcji i synchronizacji urządzeń w ramach jednej, spójnej topologii.
 
 Warto podkreślić, że system został zweryfikowany w ściśle określonych scenariuszach testowych i w granicach możliwości sprzętowych platformy ATmega328P. Największe wyzwania dotyczyły stabilności komunikacji na magistrali I$^2$C oraz ograniczeń pamięci SRAM, szczególnie w przypadku modułu labiryntu. Dodatkowym ograniczeniem była trudność w przeprowadzeniu prostych, pełnych symulacji całego układu, dlatego kluczowe znaczenie miały testy wykonywane na rzeczywistym prototypie. Wymusiło to konsekwentną optymalizację kodu, ograniczenie wykorzystania struktur dynamicznych oraz szerokie zastosowanie pamięci Flash, jednak przyjęte rozwiązania okazały się wystarczające do zapewnienia poprawnej i responsywnej pracy całego systemu.
 
