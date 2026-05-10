@@ -83,28 +83,30 @@ literate={ą}{{\k{a}}}1
 \startchapterfromoddpage % niezależnie od długości spisu treści pierwszy rozdział zacznie się na nieparzystej stronie
 
 \chapter{Wstęp}
-Wraz z dynamicznym rozwojem systemów wbudowanych (ang. \textit{embedded systems}) oraz postępującą miniaturyzacją sprzętu elektronicznego, mikrokontrolery stały się powszechnie dostępne dla szerokiego grona inżynierów i konstruktorów. Narzędzia te pozwalają na projektowanie zaawansowanych, interaktywnych urządzeń fizycznych wymuszających na użytkowniku logiczne myślenie i szybkie podejmowanie decyzji. Istniejące na rynku rozwiązania komercyjne (wykorzystywane m.in. w pokojach zagadek typu \textit{escape room} lub w celach edukacyjno-szkoleniowych) rzadko oferują jednak otwartą i modularną architekturę opartą na tanich, 8-bitowych mikrokontrolerach ułożonych w skalowalnej sieci. Z tego powodu podjęto próbę konstrukcji autorskiej platformy.
+Wraz z dynamicznym rozwojem systemów wbudowanych (ang. \textit{embedded systems}) oraz postępującą miniaturyzacją sprzętu elektronicznego mikrokontrolery stały się powszechnie dostępne dla szerokiego grona inżynierów i konstruktorów. Umożliwiają one projektowanie zaawansowanych, interaktywnych urządzeń fizycznych, które wymagają od użytkownika logicznego myślenia oraz szybkiego podejmowania decyzji. Istniejące na rynku rozwiązania komercyjne (wykorzystywane m.in. w pokojach zagadek typu \textit{escape room} lub w celach edukacyjno-szkoleniowych) rzadko jednak oferują otwartą i modularną architekturę opartą na tanich, 8-bitowych mikrokontrolerach tworzących skalowalną sieć. Z tego powodu podjęto próbę konstrukcji autorskiej platformy.
 
-\section{Cel i uzasadnienie pracy}
-Głównym celem niniejszej pracy jest zaprojektowanie architektoniczne oraz wdrożenie fizycznego, modularnego systemu zadań logicznych. System ten wymusza jednoczesne rozwiązywanie różnorodnych procedur zadaniowych przez wielu uczestników przed upływem wyznaczonego zakresu czasu. Rozwiązanie opiera się na decentralizacji interfejsów wejścia oraz wspólnym nadzorze poprzez stację zarządzającą.
+\section{Cel pracy}
+Głównym celem niniejszej pracy jest zaprojektowanie architektoniczne oraz wdrożenie modularnego systemu zadań logicznych. System wymusza równoległe rozwiązywanie różnorodnych procedur zadaniowych przez wielu uczestników w wyznaczonym czasie. Rozwiązanie opiera się na zdecentralizowanych interfejsach wejściowych oraz centralnym nadzorze jednostki zarządzającej.
 
-Wybór tematu podyktowany był chęcią weryfikacji zagadnień związanych z programowaniem 8-bitowych mikrokontrolerów rodziny AVR (szczególnie modelu ATmega328P \cite{atmega328p_datasheet}), integracją obwodów elektronicznych i implementacją protokołów komunikacyjnych działających asynchronicznie. Konstrukcja niezawodnego systemu czasu rzeczywistego (ang. \textit{Real-Time System}) stanowi złożone zagadnienie techniczne. Wymagało ono m.in. zbudowania warstwy transportowej opartej na magistrali I$^2$C w celu zapewnienia bezkolizyjnej synchronizacji danych pomiędzy jednostką nadrzędną (zarządzającą logiką gry) a niezależnymi węzłami wykonawczymi. Ze względu na specyfikę projektu, konieczna była optymalizacja kodu \texttt{C++} pod kątem małej dostępności pamięci operacyjnej SRAM (na układach ATmega328P wynosi ona zaledwie 2\,KB).
+Temat wybrano w celu weryfikacji zagadnień związanych z programowaniem 8-bitowych mikrokontrolerów rodziny AVR, w szczególności układu ATmega328P \cite{atmega328p_datasheet}, integracją układów elektronicznych oraz implementacją niezawodnej komunikacji między modułami. Konstrukcja systemu czasu rzeczywistego (ang. \textit{real-time system}) stanowi złożone zagadnienie techniczne. Wymagała ona m.in. zbudowania warstwy transportowej opartej na magistrali I$^2$C w celu zapewnienia bezkolizyjnej wymiany danych pomiędzy jednostką nadrzędną, zarządzającą logiką gry, a niezależnymi węzłami wykonawczymi. Ze względu na specyfikę projektu konieczna była optymalizacja kodu \texttt{C++} pod kątem ograniczonej pamięci SRAM, której pojemność w układach ATmega328P wynosi 2\,KB.
 
 \section{Analiza istniejących rozwiązań}
-Projektowany system czerpie inspirację z popularnej gry kooperacyjnej \textit{Keep Talking and Nobody Explodes}, w której gracze muszą wspólnie rozbroić bombę, komunikując się i rozwiązując zagadki logiczne. Na rynku istnieją również komercyjne platformy dla pokoi zagadek (np. \textit{Escape Room Master}), oferujące gotowe sterowniki i oprogramowanie. Jednak większość tych rozwiązań opiera się na drogich sterownikach PLC lub mikrokomputerach typu Raspberry Pi. Niniejsza praca udowadnia, że podobną funkcjonalność można osiągnąć przy użyciu znacznie tańszych i bardziej energooszczędnych 8-bitowych mikrokontrolerów, zachowując przy tym pełną modularność i łatwość rozbudowy.
+Projektowany system czerpie inspirację z popularnej gry kooperacyjnej \textit{Keep Talking and Nobody Explodes}, w której gracze muszą wspólnie rozbroić ładunek, komunikując się i rozwiązując zagadki logiczne. Na rynku istnieją również komercyjne platformy dla pokoi zagadek (np. \textit{Escape Room Master}), oferujące gotowe sterowniki i oprogramowanie. Jednak większość tych rozwiązań opiera się na drogich sterownikach PLC lub mikrokomputerach typu Raspberry Pi. Niniejsza praca udowadnia, że podobną funkcjonalność można osiągnąć przy użyciu znacznie tańszych i bardziej energooszczędnych 8-bitowych mikrokontrolerów, zachowując przy tym pełną modularność i łatwość rozbudowy.
 
 Dodatkową wartością zaproponowanego rozwiązania jest połączenie kilku mechanizmów rzadko występujących łącznie w prostych systemach AVR: automatycznego wykrywania modułów na magistrali I$^2$C, globalnej deterministycznej konfiguracji scenariusza gry (\textit{seed}), propagacji liczby błędów do wszystkich węzłów oraz odpornej na przypadkowe wyzwolenie procedury restartu.
 
 \section{Zakres pracy}
-Niniejsza praca inżynierska obejmuje pełen cykl projektowy i programistyczny – od zaplanowania architektury systemu i opracowania algorytmiki oprogramowania, aż do ostatecznych testów stabilności. Wyszczególniony wykaz obszarów zadaniowych zrealizowanych w ramach niniejszej pracy obejmuje:
+Niniejsza praca inżynierska obejmuje pełen cykl projektowy i programistyczny – od zaplanowania architektury systemu i opracowania algorytmiki oprogramowania aż do ostatecznych testów stabilności. Wyszczególniony wykaz obszarów zadaniowych zrealizowanych w ramach niniejszej pracy obejmuje:
 \begin{itemize}
   \item opracowanie koncepcji sprzętowej i programowej topologii rozproszonej typu \textit{Master-Slave}, wykorzystującej mikrokontrolery ATmega328P \cite{atmega328p_datasheet},
   \item wdrożenie biblioteki \texttt{ModuleComms} opartej na protokole I$^2$C, obsługującej automatyczne wykrywanie modułów na magistrali (tzw. skanowanie adresów),
-  \item zaprogramowanie stacji \textit{Master}, odpowiedzialnej za odliczanie czasu przy użyciu wielozadaniowości asynchronicznej oraz odbieranie potwierdzeń wykonania zadań z modułów,
-  \item zaprogramowanie w języku C++ modułów: arytmetycznego, labiryntu (wyświetlacz OLED), radiowego (interpretacja alfabetu Morse'a), sekwencyjnego oraz modułu z przełącznikiem dźwigniowym,
+  \item zaprogramowanie stacji \textit{Master}, odpowiedzialnej za odliczanie czasu przy użyciu wielozadaniowości asynchronicznej oraz odbieranie informacji o stanie zadań z modułów,
+  \item zaprogramowanie w języku C++ modułów: arytmetycznego, labiryntu (wyświetlacz OLED), radiowego (dekodowanie alfabetu Morse'a), sekwencyjnego oraz modułu z przełącznikiem dźwigniowym,
   \item optymalizację użycia pamięci SRAM poprzez wykorzystanie pamięci Flash (dyrektywa \texttt{PROGMEM}) do przechowywania danych statycznych,
   \item realizację testów z uwzględnieniem sprzętowej i programowej eliminacji drgań styków (ang. \textit{debouncing}).
 \end{itemize}
+
+Tak zdefiniowany zakres porządkuje dalszą strukturę pracy: w kolejnym rozdziale przedstawiono technologie i biblioteki wykorzystane w projekcie, następnie omówiono założenia projektowe, implementację oraz wyniki testów.
 
 \chapter{Narzędzia i użyte technologie}
 W niniejszym rozdziale przedstawiono technologie, narzędzia oraz biblioteki wykorzystane w niniejszej pracy. Dla każdego komponentu opisano jego rolę oraz sposób wykorzystania. Realizacja pracy opierała się na sprawdzonych rozwiązaniach otwartoźródłowych (ang. \textit{open-source}), co pozwoliło skupić się na logice gry zamiast na tworzeniu sterowników od podstaw.
@@ -119,7 +121,7 @@ W niniejszej pracy układy pracują pod kontrolą wewnętrznego oscylatora RC sk
 \section{Środowisko Arduino IDE}
 Arduino IDE \cite{cpp_arduino_ref} to środowisko programistyczne ułatwiające tworzenie oprogramowania na mikrokontrolery. Pozwala na pisanie kodu w C++ z wykorzystaniem gotowych bibliotek obsługujących m.in. przerwania czy komunikację.
 
-Wybór Arduino IDE, zamiast alternatyw takich jak PlatformIO czy Atmel Studio, podyktowany był przede wszystkim dojrzałością ekosystemu bibliotek kompatybilnych z platformą AVR oraz niskim progiem wejścia przy prototypowaniu. Choć PlatformIO oferuje bardziej zaawansowane zarządzanie zależnościami, Arduino IDE zapewniło wystarczającą funkcjonalność przy jednocześniejszej prostocie konfiguracji wielomodułowego projektu.
+Wybór Arduino IDE, zamiast alternatyw takich jak PlatformIO czy Atmel Studio, podyktowany był przede wszystkim dojrzałością ekosystemu bibliotek kompatybilnych z platformą AVR oraz niskim progiem wejścia przy prototypowaniu. Choć PlatformIO oferuje bardziej zaawansowane zarządzanie zależnościami, Arduino IDE zapewniło wystarczającą funkcjonalność przy jednoczesnej prostocie konfiguracji wielomodułowego projektu.
 
 W ramach niniejszej pracy proces programowania układów realizowano za pośrednictwem wspomnianego wcześniej narzędzia \texttt{avrdude} oraz zewnętrznego programatora sprzętowego USBasp. Na potrzeby seryjnego przygotowania mikrokontrolerów opracowano dedykowany adapter wyposażony w gniazdo typu ZIF (ang. \textit{Zero Insertion Force}) z mechanizmem dźwigniowym. Rozwiązanie to umożliwiło szybką i bezpieczną wymianę układów brzegowych bez ryzyka uszkodzenia ich wyprowadzeń, zapewniając stabilne połączenie z programatorem.
 
@@ -140,7 +142,7 @@ W niniejszej pracy biblioteki Adafruit wykorzystano w modułach labiryntu oraz r
 \section{Biblioteka wyświetlacza LiquidCrystal}
 Biblioteka \texttt{LiquidCrystal} \cite{arduino_liquid_crystal} jest standardowym narzędziem środowiska Arduino służącym do obsługi wyświetlaczy alfanumerycznych opartych na sterowniku Hitachi HD44780. Pozwala ona na komunikację z panelem LCD w trybie 4-bitowym lub 8-bitowym, co umożliwia elastyczne zarządzanie zasobami sprzętowymi mikrokontrolera.
 
-W niniejszej pracy wykorzystano tryb 4-bitowy, który wymaga podłączenia sześciu linii sygnałowych (RS, EN oraz cztery linie danych). Choć rozwiązanie to zajmuje więcej pinów mikrokontrolera niż alternatywne interfejsy szeregowe, zapewnia ono najwyższą wydajność odświeżania oraz pełną kompatybilność z podstawowymi bibliotekami bez konieczności stosowania dodatkowych układów pośredniczących, takich jak ekspandery I$^2$C. Wybór ten był możliwy dzięki rezygnacji z innych peryferiów w module arytmetycznym (klawiaturze), co pozostawiło wystarczającą liczbę wolnych wyprowadzeń ATmega328P. W ramach niniejszej pracy biblioteka służy do wyświetlania treści zadań matematycznych oraz wprowadzanych przez użytkownika odpowiedzi na panelu LCD 16x2.
+W niniejszej pracy wykorzystano tryb 4-bitowy, który wymaga podłączenia sześciu linii sygnałowych (RS, EN oraz cztery linie danych). Choć rozwiązanie to zajmuje więcej pinów mikrokontrolera niż alternatywne interfejsy szeregowe, zapewnia ono najwyższą wydajność odświeżania oraz pełną kompatybilność z podstawowymi bibliotekami bez konieczności stosowania dodatkowych układów pośredniczących, takich jak ekspandery I$^2$C. Wybór ten był możliwy dzięki rezygnacji z innych peryferiów w module arytmetycznym, co pozostawiło wystarczającą liczbę wolnych wyprowadzeń ATmega328P. W ramach niniejszej pracy biblioteka służy do wyświetlania treści zadań matematycznych oraz wprowadzanych przez użytkownika odpowiedzi na panelu LCD 16x2.
 
 \section{Biblioteka TM1637Display}
 TM1637Display \cite{TM1637Display} jest biblioteką obsługującą sprzętowy sterownik TM1637, stosowany w poczwórnych wyświetlaczach 7-segmentowych. Sterownik ten wykorzystuje dwuprzewodowy protokół komunikacyjny zbliżony koncepcyjnie do I$^2$C, lecz wymagający dedykowanych linii CLK i DIO.
@@ -185,13 +187,13 @@ Wymagania funkcjonalne definiują zakres operacji i możliwości, które system 
 
   WF-01          & Koordynacja czasu rozgrywki          & Centralny węzeł Master zarządza odliczaniem czasu dla wszystkich modułów. Błędy popełniane przez graczy powodują przyspieszenie odliczania czasu.         \\
   \hline
-  WF-02          & Niezależna logika modułów zagadek    & Wszystkie obwody posiadają niezależny algorytm rozwiązywania, podlegając asynchronicznej komunikacji wymuszanej wyłącznie na prośbę węzła głównego.       \\
+  WF-02          & Niezależna logika modułów zagadek    & Każdy moduł posiada własny algorytm rozwiązywania, a komunikacja z jednostką nadrzędną odbywa się wyłącznie na żądanie węzła głównego.       \\
   \hline
-  WF-03          & Determinizm konfiguracji (Seed)      & System inicjuje przed startem dystrybucję globalnego numeru konfiguracji po łączu I$^2$C, determinizując pseudolosowe zdarzenia we wszystkich układach.   \\
+  WF-03          & Determinizm konfiguracji (Seed)      & System inicjuje przed startem dystrybucję globalnego numeru konfiguracji po łączu I$^2$C, determinując pseudolosowe zdarzenia we wszystkich układach.   \\
   \hline
   WF-04          & Obsługa wielu typów modułów          & System obsługuje co najmniej pięć typów modułów: arytmetyczny, labiryntu, radiowy, sekwencyjny oraz z przełącznikiem.                                     \\
   \hline
-  WF-05          & Detekcja i propagacja błędów         & Niepoprawne działanie operatora generuje zdarzenie błędu rejestrowane globalnie przez Master. Akumulacja błędów wpływa na zachowanie pozostałych modułów. \\
+  WF-05          & Detekcja i propagacja błędów         & Niepoprawne działanie użytkownika generuje zdarzenie błędu rejestrowane globalnie przez Master. Akumulacja błędów wpływa na zachowanie pozostałych modułów. \\
   \hline
   WF-06          & Automatyczne wykrywanie topologii    & Serwer Master po uruchomieniu skanuje adresy magistrali I$^2$C w celu automatycznej identyfikacji podłączonych modułów bez ręcznej konfiguracji.          \\
   \hline
@@ -226,9 +228,9 @@ Wymagania niefunkcjonalne definiują cechy jakościowe systemu oraz techniczne o
   \hline
   \endlastfoot
 
-  WN-01          & Modularność sprzętowa (Plug-and-Play) & Stacje podłączane są do wspólnej szyny I$^2$C na współdzielonym zasilaniu (+5\,V i GND), minimalizując liczbę styków montażowych z utrzymaniem odporności na przerwanie łączności. \\
+  WN-01          & Modularność sprzętowa (Plug-and-Play) & Stacje podłączane są do wspólnej szyny I$^2$C na współdzielonym zasilaniu (+5\,V i GND), co ogranicza liczbę połączeń montażowych i zwiększa odporność na chwilowe przerwy w łączności. \\
   \hline
-  WN-02          & Wielozadaniowość nieblokująca         & Zrezygnowanie z wywołań \texttt{delay()} w logice rdzeniowej. Ewaluacje stanów opierają się o mechanizm obliczeń delty z systemowego stopera \texttt{millis()}.                    \\
+  WN-02          & Wielozadaniowość nieblokująca         & Rezygnacja z wywołań \texttt{delay()} w logice rdzeniowej. Ocena stanów opiera się na obliczaniu różnicy czasu z wykorzystaniem systemowego stopera \texttt{millis()}.                    \\
   \hline
   WN-03          & Efektywne wykorzystanie pamięci       & System funkcjonuje w ramach limitów ATmega328P (2\,KB SRAM, 32\,KB Flash). Duże struktury danych alokowane są w pamięci Flash za pośrednictwem \texttt{PROGMEM}.                   \\
   \hline
@@ -325,10 +327,10 @@ Moduły radiowy oraz labiryntu wykorzystują dodatkowo sterownik wyświetlaczy O
 W niniejszym rozdziale opisano praktyczną realizację założeń projektowych systemu. Nacisk położono na architekturę oprogramowania, implementację autorskiego protokołu komunikacyjnego, zastosowany wzorzec wielozadaniowości kooperatywnej oraz szczegółową budowę poszczególnych modułów zagadek. Dla każdego komponentu przedstawiono kluczowe fragmenty kodu źródłowego wraz z uzasadnieniem przyjętych rozwiązań programistycznych.
 
 \section{Architektura oprogramowania}
-Zaprojektowany system obwodu logiki gry operuje na płaszczyźnie architektury silnie rozproszonej z scentralizowanym panelem jednostki, definiując paradygmat jednego koordynującego serwera (\textit{Master}) nadzorującego liczne peryferyjne stanowiska obliczeniowe modułów (\textit{Slave}). Główną wytyczną podczas projektowania struktury oprogramowania procesorów było wdrożenie abstrakcji programowej dla logiki centrali, ujednolicającej wywołania stanu mikrokontrolerów pomimo skrajnych różnic stosowanych u nich fizycznych sensorów wykonawczych i różnorodności samych obwodów.
+Zaprojektowany system działa w architekturze silnie rozproszonej ze scentralizowaną jednostką nadrzędną. Jeden koordynujący serwer (\textit{Master}) nadzoruje liczne moduły podrzędne (\textit{Slave}), a warstwa oprogramowania ujednolica sposób wymiany informacji o stanie poszczególnych węzłów. Podczas projektowania struktury programu przyjęto założenie, że logika centralna ma być odseparowana od implementacji konkretnych modułów i ich czujników oraz elementów wykonawczych.
 
 \section{Autorska biblioteka komunikacyjna ModuleComms}
-Biblioteka \texttt{ModuleComms} powstała, aby ujednolicić obsługę komunikacji I$^2$C i uniknąć powielania kodu. Bez niej każdy moduł musiałby samodzielnie zarządzać buforowaniem danych i dekodowaniem ramek protokołu. Biblioteka przejmuje te zadania, oferując programiście gotowe funkcje do sprawdzania stanu modułów i obsługi logiki gry.
+Biblioteka \texttt{ModuleComms} powstała, aby ujednolicić obsługę komunikacji I$^2$C i ograniczyć powielanie kodu. Bez niej każdy moduł musiałby samodzielnie zarządzać buforowaniem danych i dekodowaniem ramek protokołu. Biblioteka przejmuje te zadania, udostępniając funkcje do sprawdzania stanu modułów i obsługi logiki gry.
 
 W protokole komunikacyjnym każde polecenie i każdy status to pojedynczy bajt. Komendy wywołujące akcję po stronie serwera to np. \texttt{CMD\_START\_GAME} czy \texttt{CMD\_IDENTIFY}, a flagi stanu modułu to \texttt{STATUS\_UNSOLVED}, \texttt{STATUS\_PASSED} i \texttt{STATUS\_FAILED}. Dzięki temu zamiast przesyłać przez magistralę pełne tekstowe identyfikatory poleceń wystarczy pojedynczy bajt --- co zmniejsza liczbę przesyłanych danych i zwiększa przepustowość komunikacji.
 Listing~\ref{lst:modulecomms-protocol-defs} prezentuje komplet kodów komend i statusów używanych przez warstwę transportową biblioteki.
@@ -410,7 +412,7 @@ private:
 };
 \end{lstlisting}
 
-Jednostka Master zarządza komunikacją poprzez cykliczne odpytywanie wszystkich modułów podłączonych do magistrali. Wykorzystuje do tego funkcję \texttt{Wire.requestFrom()}, która pozwala na pewne pobranie statusu z każdego węzła. Jeżeli moduł zgłosi stan \texttt{STATUS\_PASSED}, Master przestaje go odpytywać, uznając zadanie za wykonane. W przypadku zgłoszenia \texttt{STATUS\_FAILED}, licznik błędów systemu zostaje zwiększony. Po przekroczeniu dopuszczalnej liczby błędów lub upływie czasu, Master wysyła do wszystkich modułów sygnał zakończenia gry, co powoduje zablokowanie ich logiki i wywołanie funkcji resetującej stan urządzenia.
+Jednostka Master zarządza komunikacją poprzez cykliczne odpytywanie wszystkich modułów podłączonych do magistrali. Wykorzystuje do tego funkcję \texttt{Wire.requestFrom()}, która umożliwia odczyt statusu z każdego węzła. Jeżeli moduł zgłosi stan \texttt{STATUS\_PASSED}, Master przestaje go odpytywać, uznając zadanie za wykonane. W przypadku zgłoszenia \texttt{STATUS\_FAILED} licznik błędów systemu zostaje zwiększony. Po przekroczeniu dopuszczalnej liczby błędów lub upływie czasu Master wysyła do wszystkich modułów sygnał zakończenia gry, co powoduje zablokowanie ich logiki i wywołanie funkcji resetującej stan urządzenia.
 
 \section{Wielozadaniowość kooperatywna i wstrzymania nieblokujące}
 Standardowe podejście w środowisku Arduino do odmierzania czasu opiera się na funkcji \texttt{delay()}. Skutkuje ona jednak zatrzymaniem pracy procesora na określony czas (ang. \textit{busy waiting}), co uniemożliwia wykonywanie innych zadań w tle. Ze względu na asynchroniczny model komunikacji I$^2$C stosowany w niniejszej pracy, użycie blokującego oczekiwania doprowadziłoby do utraty nadchodzących pakietów danych i żądań ze sterownika Master, co skutkowałoby błędami desynchronizacji (ang. \textit{timeout}).
@@ -418,6 +420,31 @@ Standardowe podejście w środowisku Arduino do odmierzania czasu opiera się na
 Aby zagwarantować pełną responsywność systemu i uniknąć kolizji na magistrali, wdrożono wzorzec \textbf{wielozadaniowości kooperatywnej} (ang. \textit{cooperative multitasking}). Zamiast zatrzymywać program, wykorzystano nieblokujące liczniki programowe (ang. \textit{non-blocking software timers}) oparte na funkcji \texttt{millis()}. We wszystkich modułach główna pętla \texttt{loop()} wykonuje się nieustannie, a logika programu jedynie sprawdza, czy od ostatniego zdarzenia upłynął wymagany interwał czasowy. Pozwala to mikrokontrolerowi na jednoczesne odświeżanie wyświetlaczy, skanowanie przycisków oraz ciągłe nasłuchiwanie na magistrali I$^2$C bez ryzyka zablokowania komunikacji.
 
 \section{Implementacja obwodów i modułów wbudowanych}
+\subsection{Adresacja i topologia modułów}
+W implementacji systemu każdy moduł otrzymał stały adres magistrali I\textsuperscript{2}C, co pozwala na jednoznaczną identyfikację urządzeń już na etapie inicjalizacji oraz eliminuje ryzyko kolizji adresów. Rozwiązanie to upraszcza procedurę wykrywania, ułatwia diagnostykę i zwiększa rozszerzalność systemu, ponieważ dodanie nowego modułu sprowadza się do przydzielenia mu wolnego adresu i nie wymaga dodatkowej ingerencji po stronie modułu nadrzędnego. Taka forma adresacji jest również korzystna z punktu widzenia czytelności kodu i organizacji całej topologii logicznej.
+
+Przyjęto następujące przypisanie adresów do modułów, zestawione w Tabeli~\ref{tab:module_i2c_addresses}:
+
+\begin{table}[H]
+\centering
+\caption{Przypisanie adresów I\textsuperscript{2}C do modułów systemu} \label{tab:module_i2c_addresses}
+\begin{tabular}{|c|l|}
+\hline
+\textbf{Adres} & \textbf{Moduł} \\
+\hline
+0x11 & Moduł sekwencyjny \\
+\hline
+0x12 & Moduł labiryntu \\
+\hline
+0x13 & Moduł radiowy \\
+\hline
+0x14 & Moduł z przewodami \\
+\hline
+0x15 & Moduł symboli \\
+\hline
+\end{tabular}
+\end{table}
+
 \subsection{Moduł nadrzędny}
 Stacja nadrzędna stanowi centralny punkt decyzyjny całego omawianego systemu. Jako jedyna z peryferiów, nie implementuje ona podrzędnego interfejsu zagadek, lecz służy za główny zegar odliczający i dystrybutor globalnych ustawień gry. Stacja nadrzędna została rozbudowana o poczwórny wyświetlacz 7-segmentowy (\texttt{TM1637}), pełniący rolę głównego wskaźnika czasu, oraz dodatkowy, 2-cyfrowy wyświetlacz 7-segmentowy obsługiwany przez rejestry przesuwne. Ten drugi służy do prezentacji wylosowanego ziarna pseudolosowości (zmiennej \texttt{version}), determinującego logikę pozostałych modułów. Interfejs wyposażono również w przycisk Start, przełącznik dźwigniowy oraz przetwornik piezoelektryczny (buzzer) do sygnalizacji dźwiękowej.
 
@@ -770,9 +797,9 @@ const RadioTarget targets[] = {
 \end{lstlisting}
 
 \chapter{Testy i działanie systemu}
-Niniejszy rozdział zawiera szczegółową ocenę systemu DefuseIt z dwóch perspektyw: \textbf{(1)} analizy ograniczeń zasobów sprzętowych mikrokontrolerów ATmega328P oraz \textbf{(2)} empirycznej weryfikacji poprawności komunikacji I$^2$C, niezawodności logiki modułów i precyzji odmierzania czasu. Obydwie części uzupełniają się wzajemnie — pierwsze sekcje pokazują, w jakich warunkach hardware'owych operuje system, podczas gdy testy demonstrują spełnienie wymagań funkcjonalnych bez przekroczenia limitów sprzętowych.
+Niniejszy rozdział zawiera szczegółową ocenę systemu z dwóch perspektyw, analizy ograniczeń zasobów sprzętowych mikrokontrolerów ATmega328P oraz  empirycznej weryfikacji poprawności komunikacji I$^2$C, niezawodności logiki modułów i precyzji odmierzania czasu. Obydwie części uzupełniają się wzajemnie — pierwsze sekcje pokazują, w jakich warunkach pracy operuje system, podczas gdy testy demonstrują spełnienie wymagań funkcjonalnych bez przekroczenia limitów sprzętowych.
 
-Specyfika mikrokontrolerów AVR wymusza odmienną metodykę testowania niż w przypadku komputerów PC. Základową weryfikacją jest pomyślna kompilacja kodu (\texttt{avr-gcc}), która sprawdza nie tylko składnię, ale i zajętość pamięci Flash oraz SRAM — raporty kompilatora pozwalają wstępnie upewnić się, że program będzie mieścił się w dostępnych limitach. Dodatkowo, do podglądu komunikatów diagnostycznych w czasie rzeczywistym wykorzystywano płytkę Arduino Uno R4 WiFi jako przekaźnik UART-USB, monitorując stany wewnętrzne (adresy I$^2$C, statusy modułów, wartości timerów). Uzupełnieniem weryfikacji kompilacyjnej były testy integracyjne przeprowadzone na fizycznym prototypie, obejmujące zarówno walidację wydajności kanału I$^2$C, jak i pomiary rzeczywistego zużycia pamięci w warunkach operacyjnych.
+Specyfika mikrokontrolerów AVR wymusza odmienną metodykę testowania niż w przypadku klasycznych komputerów. Podstawową weryfikacją jest pomyślna kompilacja kodu, która sprawdza nie tylko składnię, ale i zajętość pamięci Flash oraz SRAM — raporty kompilatora pozwalają wstępnie upewnić się, że program będzie mieścił się w dostępnych limitach. Dodatkowo, do podglądu komunikatów diagnostycznych w czasie rzeczywistym wykorzystywano płytkę Arduino Uno R4 WiFi jako przekaźnik UART-USB, monitorując stany wewnętrzne (adresy I$^2$C, statusy modułów, pomiary czasu). Uzupełnieniem weryfikacji kompilacyjnej były testy integracyjne przeprowadzone na fizycznym prototypie, obejmujące zarówno walidację wydajności kanału I$^2$C, jak i pomiary rzeczywistego zużycia pamięci w warunkach operacyjnych.
 
 \section{Analiza wykorzystania zasobów sprzętowych}
 Wybór 8-bitowego mikrokontrolera ATmega328P jako platformy bazowej narzucił rygorystyczne wymagania dotyczące optymalizacji kodu. Poniższa tabela (Tabela~\ref{tab:memory_usage_summary}) zestawia ostateczne wyniki kompilacji dla wszystkich komponentów systemu, obrazując stopień wykorzystania dostępnej pamięci Flash oraz SRAM.
@@ -809,7 +836,7 @@ Wybór 8-bitowego mikrokontrolera ATmega328P jako platformy bazowej narzucił ry
 \normalsize
 \vspace{1em}
 
-Największe wyzwanie pod kątem zasobów Flash stanowił moduł labiryntu, co wynika z konieczności przechowywania licznych bitmap renderowanych w perspektywie 3D. Z kolei w przypadku pamięci SRAM kluczowym ograniczeniem okazała się obecność wyświetlaczy OLED w modułach radiowym oraz labiryntu. Powyższa analiza (Tabela~\ref{tab:memory_usage_summary}) uwzględnia fakt, że sterowniki graficzne (np. \texttt{Adafruit\_SH1106G}) rezerwują w czasie działania programu dodatkowy bufor ramki o rozmiarze 1024 bajtów (128x64 pikseli monochromatycznych). Ponieważ alokacja ta odbywa się dynamicznie wewnątrz klasy sterownika, nie jest ona raportowana przez kompilator jako stałe zużycie pamięci operacyjnej. W rzeczywistości, po doliczeniu tego bufora, moduł labiryntu operuje na granicy stabilności sprzętowej, wykorzystując blisko 90\% dostępnej pamięci SRAM (2\,KB), co wymusiło rezygnację z jakichkolwiek innych struktur dynamicznych i oparcie logiki wyłącznie na zmiennych lokalnych oraz stałych \texttt{PROGMEM}.
+Największe wyzwanie pod kątem zasobów Flash stanowił moduł labiryntu, co wynika z konieczności przechowywania licznych map bitowych renderowanych w perspektywie 3D. Z kolei w przypadku pamięci SRAM kluczowym ograniczeniem okazała się obecność wyświetlaczy OLED w modułach radiowym oraz labiryntu. Powyższa analiza (Tabela~\ref{tab:memory_usage_summary}) uwzględnia fakt, że sterowniki graficzne (np. \texttt{Adafruit\_SH1106G}) rezerwują w czasie działania programu dodatkowy bufor ramki o rozmiarze 1024 bajtów (128x64 pikseli monochromatycznych). Ponieważ alokacja ta odbywa się dynamicznie wewnątrz klasy sterownika, nie jest ona raportowana przez kompilator jako stałe zużycie pamięci operacyjnej. W rzeczywistości, po doliczeniu tego bufora, moduł labiryntu operuje na granicy stabilności sprzętowej, wykorzystując blisko 90\% dostępnej pamięci SRAM (2\,KB), co wymusiło rezygnację z jakichkolwiek innych struktur dynamicznych i oparcie logiki wyłącznie na zmiennych lokalnych oraz stałych \texttt{PROGMEM}.
 
 Warto również zauważyć, że relatywnie wysokie użycie pamięci Flash w module radiowym (47\%) wynika z przechowywania sekwencji alfabetu Morse'a w postaci czytelnych ciągów znaków (np. kropki i kreski jako typ danych \texttt{char}). Rozwiązanie to wybrano ze względu na przejrzystość kodu i łatwość wprowadzania zmian. W przypadku konieczności dalszej optymalizacji, zasoby te można by zredukować poprzez zastosowanie kodowania bitowego (bit-packing), gdzie każda kropka i kreska reprezentowana byłaby przez pojedynczy bit, jednak przy obecnej skali projektu nie było to wymagane.
 
@@ -855,10 +882,10 @@ Poniższe sekcje prezentują wyniki empirycznej weryfikacji warstwy sprzętowej 
 Tabela~\ref{tab:test_results} zawiera podsumowanie przeprowadzonych scenariuszy testowych oraz krótką charakterystykę każdego testu.
 
 \subsubsection{Test T01: Powtarzalność procesu inicjalizacji}
-Celem testu była weryfikacja stabilności procedury automatycznej adresacji i wykrywania modułów na magistrali I$^2$C. Przeprowadzono 10 cykli zimnego startu systemu, monitorując poprawność identyfikacji wszystkich urządzeń peryferyjnych przez jednostkę centralną (Master). Uzyskano wynik \textbf{10/10}. Wszystkie próby przebiegły pomyślnie — każdy moduł udzielił potwierdzenia ACK w odpowiedzi na ramkę \texttt{CMD\_IDENTIFY}, a po uruchomieniu systemu wszystkie jednostki zgłosiły gotowość do pracy.
+Celem testu była weryfikacja stabilności procedury automatycznej adresacji i wykrywania modułów na magistrali I$^2$C. Przeprowadzono 10 cykli zimnego startu systemu, monitorując poprawność identyfikacji wszystkich urządzeń peryferyjnych przez jednostkę centralną (Master). Wszystkie próby przebiegły pomyślnie — każdy moduł udzielił potwierdzenia ACK w odpowiedzi na ramkę \texttt{CMD\_IDENTIFY}, a po uruchomieniu systemu wszystkie jednostki zgłosiły gotowość do pracy.
 
 \subsubsection{Test T02: Obsługa stanów awaryjnych}
-W ramach testu sprawdzono zdolność jednostki Master do rejestracji i dystrybucji zmiennej stanu błędu (\texttt{mistakeCount}) po wystąpieniu zdarzenia \texttt{STATUS\_FAILED} w dowolnym węźle. Wszystkie testy przebiegły pomyślnie, a system poprawnie zareagował na symulowane błędy, aktualizując stan globalny i przekazując informację do pozostałych modułów.
+W ramach testu sprawdzono zdolność jednostki Master do rejestracji i dystrybucji zmiennej stanu błędu (\texttt{mistakeCount}) po wystąpieniu zdarzenia \texttt{STATUS\_FAILED} w dowolnym module. Wszystkie testy przebiegły pomyślnie, a system poprawnie zareagował na symulowane błędy, aktualizując stan globalny i przekazując informację do pozostałych modułów.
 
 \subsubsection{Test T03: Weryfikacja warunku zakończenia sesji}
 Weryfikacji poddano warunek zakończenia sesji, polegający na zgłoszeniu statusu \texttt{PASS} przez wszystkie aktywne moduły. W 5 przeprowadzonych próbach system każdorazowo pozostawał w stanie oczekiwania na potwierdzenie ostatniego modułu przed zadeklarowaniem zakończenia sesji.
@@ -890,14 +917,23 @@ Liczba odpytań w 5 sekund & 434 & zapytań \\
 \end{tabular}
 \end{table}
 
-Pomiary wykazują, że system utrzymuje stałą częstotliwość odpytania każdego z modułów na poziomie ~17 Hz, co odpowiada okresowi cyklu około 57–58 ms. Czas odkrywania modułów na magistrali I\textsuperscript{2}C wynoszący średnio 115 ms jest akceptowalny dla zastosowania o charakterze interaktywnym, gdzie elementy UI aktualizują się co kilkaset milisekund. Wynik ten potwierdza efektywność implementacji procedury \texttt{discoverModules()} w kodzie modułu nadrzędnego.
+Przebieg liczby odpytań w kolejnych seriach pomiarowych pokazany na Rysunku~\ref{fig:polling_plot} potwierdza, że system utrzymuje stałą wartość około 435 odpytań na próbkę (5 sekund) z okazjonalnymi wahaniami do 420, co odzwierciedla stabilność mechanizmu opytania magistrali I\textsuperscript{2}C.
 
-\chapter{Podsumowanie i wnioski}
-Celem pracy było zaprojektowanie modularnego systemu zadań logicznych na mikrokontrolerach ATmega328P. Niniejsza praca potwierdziła, że architektura nadrzędno-podrzędna (ang. \textit{Master-Slave}) i magistrala I$^2$C pozwalają na stworzenie stabilnego i skalowalnego systemu. Oprogramowanie umożliwia koordynację wielu modułów przy zachowaniu płynności interfejsu.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{polling.png}
+\caption{Przebieg liczby odpytań modułów w kolejnych seriach pomiarowych}
+\label{fig:polling_plot}
+\end{figure}
 
-Niniejsza praca wykazała znaczenie optymalizacji pamięci (2\,KB SRAM). Wykorzystanie pamięci Flash (\texttt{PROGMEM}) oraz lekkiego protokołu komunikacyjnego pozwoliło na realizację złożonych zadań bez przekraczania limitów sprzętowych.
+Pomiary wykazują, że system utrzymuje stałą częstotliwość odpytania każdego z modułów na poziomie ~17 Hz, co odpowiada okresowi cyklu około 57–58 ms. Czas odkrywania modułów na magistrali I\textsuperscript{2}C wynoszący średnio 115 ms jest akceptowalny dla zastosowania o charakterze interaktywnym, gdzie elementy interfejsu aktualizują się co kilkaset milisekund. Wynik ten potwierdza efektywność implementacji procedury \texttt{discoverModules()} w kodzie modułu nadrzędnego.
 
-Głównym wyzwaniem technicznym okazało się zapewnienie stabilności sygnału na magistrali przy jednoczesnym poborze prądu przez wyświetlacze i diody, co wymagało zastosowania odpowiedniego filtrowania i zasilania. W ramach dalszego rozwoju projektu planowane jest zastąpienie niektórych mikrokontrolerów ATmega328P układami ESP32. Pozwoliłoby to na wykorzystanie łączności Wi-Fi do zdalnego monitorowania stanu gry oraz przeniesienie części obliczeń do centralnego systemu zarządzającego symulacją.
+\chapter{Podsumowanie}
+Projekt systemu oraz przeprowadzone testy pozwoliły pomyślnie zrealizować główny cel pracy, jakim było zaprojektowanie i wdrożenie modularnego systemu zadań logicznych opartego na mikrokontrolerach ATmega328P. Opracowane rozwiązanie obejmuje jednostkę nadrzędną, pięć niezależnych modułów oraz warstwę komunikacyjną opartą na magistrali I$^2$C. Uzyskane wyniki potwierdziły poprawność przyjętej architektury, stabilność działania logiki modułów oraz skuteczność automatycznej detekcji i synchronizacji urządzeń w ramach jednej, spójnej topologii.
+
+Warto podkreślić, że system został zweryfikowany w ściśle określonych scenariuszach testowych i w granicach możliwości sprzętowych platformy ATmega328P. Największe wyzwania dotyczyły stabilności komunikacji na magistrali I$^2$C oraz ograniczeń pamięci SRAM, szczególnie w przypadku modułu labiryntu. Dodatkowym ograniczeniem była trudność w przeprowadzeniu prostych, pełnych symulacji całego układu, dlatego kluczowe znaczenie miały testy wykonywane na rzeczywistym prototypie. Wymusiło to konsekwentną optymalizację kodu, ograniczenie wykorzystania struktur dynamicznych oraz szerokie zastosowanie pamięci Flash, jednak przyjęte rozwiązania okazały się wystarczające do zapewnienia poprawnej i responsywnej pracy całego systemu.
+
+W przyszłości system mógłby zostać rozbudowany o kolejne moduły oraz o dodatkowe mechanizmy ułatwiające konfigurację i nadzór nad rozgrywką. Cennym kierunkiem dalszych prac byłaby również aktualizacja i powtórzenie badań po dłuższym czasie eksploatacji, aby ocenić trwałość przyjętych rozwiązań oraz ich podatność na dalszą rozbudowę. Możliwe byłoby także przeniesienie części funkcji na wydajniejszą platformę, na przykład mikrokontroler ESP32, a w szerszej perspektywie uzupełnienie systemu o komunikację bezprzewodową, zdalną administrację lub nowe moduły wykorzystujące bardziej zaawansowane mechanizmy interakcji.
 
 \begin{thebibliography}{20}
   \bibitem{atmega328p_datasheet}
