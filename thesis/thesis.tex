@@ -156,7 +156,7 @@ SPI.h jest standardową biblioteką środowiska Arduino, realizującą obsługę
 
 Protokół SPI został zastosowany w module labiryntu zamiast I$^2$C z dwóch kluczowych powodów. Po pierwsze, magistrala SPI oferuje znacząco wyższą przepustowość, niezbędną do wydajnego przesyłania pełnych buforów ramki obrazu (1\,KB) do wyświetlacza OLED bez blokowania pętli głównej. Po drugie, mikrokontrolery ATmega328P posiadają tylko jeden sprzętowy interfejs I$^2$C, który w tym module jest już wykorzystywany do pracy w trybie Slave na potrzeby komunikacji systemowej. Jednoczesna obsługa wyświetlacza jako Master na tej samej magistrali byłaby programowo i sprzętowo nieefektywna, wymagając ciągłego i ryzykownego przełączania trybów pracy kontrolera TWI.
 
-\chapter{Projekt systemu}
+\chapter{Projekt systemu zadań logicznych}
 W niniejszym rozdziale przedstawiono projekt modularnego systemu zadań logicznych. Głównym celem projektu było opracowanie skalowalnej i łatwej w rozszerzaniu platformy sprzętowo-programowej, umożliwiającej jednoczesną, interaktywną pracę wielu uczestników z niezależnymi modułami zagadek, koordynowanymi przez centralną jednostkę zarządzającą. W kolejnych podrozdziałach szczegółowo opisano specyfikację wymagań, architekturę systemu oraz strukturę klas obiektowych.
 
 \section{Specyfikacja wymagań}
@@ -323,7 +323,7 @@ Centralnym elementem jest biblioteka \texttt{ModuleComms}, z której korzystają
 Moduły radiowy oraz labiryntu wykorzystują dodatkowo sterownik wyświetlaczy OLED \texttt{Adafruit\_SH1106G}, który dziedziczy po uniwersalnym rdzeniu graficznym \texttt{Adafruit\_GFX} i komunikuje się z wyświetlaczem przez interfejs SPI (\texttt{SPI.h}). Moduł arytmetyczny korzysta z biblioteki \texttt{LiquidCrystal} do obsługi panelu alfanumerycznego LCD, natomiast jednostka nadrzędna wykorzystuje \texttt{TM1637Display} do sterowania wyświetlaczem 7-segmentowym prezentującym czas rozgrywki. Moduł sekwencyjny oraz moduł z przełącznikiem nie wymagają zewnętrznych bibliotek peryferiów --- operują wyłącznie na pinach cyfrowych mikrokontrolera za pomocą standardowych funkcji Arduino.
 
 
-\chapter{Implementacja}
+\chapter{Implementacja systemu}
 W niniejszym rozdziale opisano praktyczną realizację założeń projektowych systemu. Nacisk położono na architekturę oprogramowania, implementację autorskiego protokołu komunikacyjnego, zastosowany wzorzec wielozadaniowości kooperatywnej oraz szczegółową budowę poszczególnych modułów zagadek. Dla każdego komponentu przedstawiono kluczowe fragmenty kodu źródłowego wraz z uzasadnieniem przyjętych rozwiązań programistycznych.
 
 \section{Architektura oprogramowania}
@@ -928,7 +928,7 @@ Przebieg liczby odpytań w kolejnych seriach pomiarowych pokazany na Rysunku~\re
 
 Pomiary wykazują, że system utrzymuje stałą częstotliwość odpytania każdego z modułów na poziomie ~17 Hz, co odpowiada okresowi cyklu około 57–58 ms. Czas odkrywania modułów na magistrali I\textsuperscript{2}C wynoszący średnio 115 ms jest akceptowalny dla zastosowania o charakterze interaktywnym, gdzie elementy interfejsu aktualizują się co kilkaset milisekund. Wynik ten potwierdza efektywność implementacji procedury \texttt{discoverModules()} w kodzie modułu nadrzędnego.
 
-\chapter{Podsumowanie}
+\chapter{Podsumowanie i wnioski końcowe}
 Projekt systemu i przeprowadzone testy umożliwiły pomyślną realizację głównego celu pracy, jakim było zaprojektowanie i wdrożenie modularnego systemu zadań logicznych opartego na mikrokontrolerach ATmega328P. Opracowane rozwiązanie obejmuje jednostkę nadrzędną, pięć niezależnych modułów oraz warstwę komunikacyjną opartą na magistrali I$^2$C. Uzyskane wyniki potwierdziły poprawność przyjętej architektury, stabilność działania logiki modułów oraz skuteczność automatycznej detekcji i synchronizacji urządzeń w ramach jednej, spójnej topologii.
 
 Warto podkreślić, że system został zweryfikowany w ściśle określonych scenariuszach testowych i w granicach możliwości sprzętowych platformy ATmega328P. Największe wyzwania dotyczyły stabilności komunikacji na magistrali I$^2$C oraz ograniczeń pamięci SRAM, szczególnie w przypadku modułu labiryntu. Dodatkowym ograniczeniem była trudność w przeprowadzeniu prostych, pełnych symulacji całego układu, dlatego kluczowe znaczenie miały testy wykonywane na rzeczywistym prototypie. Wymusiło to konsekwentną optymalizację kodu, ograniczenie wykorzystania struktur dynamicznych oraz szerokie zastosowanie pamięci Flash, jednak przyjęte rozwiązania okazały się wystarczające do zapewnienia poprawnej i responsywnej pracy całego systemu.
