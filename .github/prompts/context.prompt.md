@@ -1,6 +1,6 @@
 ---
 description: "Use built-in DefuseIt context to modify code and thesis text without re-scanning the repo each time"
-name: "DefuseIt Code + Thesis Context"
+name: "context"
 argument-hint: "task=<code|thesis|both> goal=<what to change>"
 agent: "agent"
 ---
